@@ -1,0 +1,32 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+export const useAuthStore = create(
+  persist(
+    (set) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      login: (user, token) => {
+        localStorage.setItem('token', token);
+        set({ user, token, isAuthenticated: true });
+      },
+      logout: () => {
+        localStorage.removeItem('token');
+        set({ user: null, token: null, isAuthenticated: false });
+      },
+      updateUser: (user) => set({ user }),
+    }),
+    { name: 'auth-storage', partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }) }
+  )
+);
+
+export const useUIStore = create((set) => ({
+  sidebarOpen: true,
+  mobileMenuOpen: false,
+  notificationCount: 0,
+  toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  toggleMobileMenu: () => set((s) => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+  setNotificationCount: (count) => set({ notificationCount: count }),
+  closeMobileMenu: () => set({ mobileMenuOpen: false }),
+}));

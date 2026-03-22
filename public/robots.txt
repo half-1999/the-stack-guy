@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://thestackguy.com/sitemap.xml
+
