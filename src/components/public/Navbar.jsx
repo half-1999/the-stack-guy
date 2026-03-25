@@ -76,9 +76,9 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/login" className="text-sm font-medium no-underline" style={{ color: 'var(--color-text-secondary)' }}>
+          {/* <Link to="/login" className="text-sm font-medium no-underline" style={{ color: 'var(--color-text-secondary)' }}>
             Login
-          </Link>
+          </Link> */}
           <Link to="/book-call" className="btn-primary text-sm" style={{ padding: '0.5rem 1.25rem' }}>
             <Zap size={14} /> Book a Call
           </Link>
