@@ -16,6 +16,7 @@ export default function Appointments() {
   const [showCalendly, setShowCalendly] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [meetingLink, setMeetingLink] = useState('');
+  const [newNote, setNewNote] = useState('');
 
   const { data: resp, isLoading } = useQuery({
     queryKey: ['appointments', activeView],
@@ -80,24 +81,26 @@ export default function Appointments() {
             </p>
           </motion.div>
 
-          {/* Buttons */}
-          {/* <div className="flex flex-wrap gap-3 sm:gap-4">
-            {['upcoming', 'history', 'drafts'].map(view => (
-              <button
-                key={view}
-                onClick={() => setActiveView(view)}
-                className={`h-12 px-6 rounded-xl text-xs font-bold 
-          uppercase tracking-wider transition-all duration-300 border
-          ${activeView === view
-                    ? 'bg-white text-black border-white shadow-lg scale-105'
-                    : 'text-gray-400 border-white/10 bg-white/[0.03] hover:border-white/30 hover:text-white'
-                  }`}
-              >
-                {view}
-              </button>
-            ))}
-          </div> */}
-
+          <div className="flex flex-wrap gap-3 sm:gap-4">
+            <button 
+              onClick={() => {
+                const name = prompt('Client Name:');
+                const email = prompt('Client Email:');
+                const date = prompt('Date (YYYY-MM-DD):');
+                const timeSlot = prompt('Time Slot (e.g. 10:00 AM):');
+                const type = prompt('Type (discovery-call/consultation/project-review):', 'discovery-call');
+                if (name && email && date && timeSlot) {
+                  appointmentsAPI.createManual({ name, email, date, timeSlot, type }).then(() => {
+                    toast.success('Booking created!');
+                    queryClient.invalidateQueries(['appointments']);
+                  }).catch(err => toast.error('Failed to create booking'));
+                }
+              }}
+              className="h-12 px-8 rounded-[16px] bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-glow-blue/20 flex items-center gap-3 hover:bg-blue-500 transition-all border-none"
+            >
+              <Plus size={18} /> Manual Booking
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-2 gap-16">
@@ -298,12 +301,47 @@ export default function Appointments() {
                   </div>
 
                   <div className="glass-card p-6 border-white/5 col-span-2">
-                    <p className="text-[10px] text-gray-500 uppercase mb-2">
-                      Notes
+                    <p className="text-[10px] text-gray-500 uppercase mb-4">
+                      Protocol Log / Notes
                     </p>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap">
-                      {selectedApp.notes || 'No notes provided'}
-                    </p>
+                    <div className="space-y-4 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                      {selectedApp.notes && selectedApp.notes.length > 0 ? (
+                        selectedApp.notes.map((n, idx) => (
+                          <div key={idx} className="p-4 bg-white/[0.02] rounded-xl border border-white/5">
+                            <p className="text-sm text-gray-300">{n.text}</p>
+                            <p className="text-[9px] text-gray-600 mt-2 uppercase font-black">
+                              {new Date(n.date).toLocaleString()} • {n.author || 'Admin'}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 italic text-sm text-center py-4">No notes on record.</p>
+                      )}
+                    </div>
+                    {user?.role === 'admin' && (
+                      <div className="mt-4 flex gap-2">
+                        <input 
+                          value={newNote}
+                          onChange={(e) => setNewNote(e.target.value)}
+                          placeholder="Add internal note..."
+                          className="flex-1 h-10 px-4 bg-white/5 border border-white/10 rounded-lg text-xs text-white"
+                        />
+                        <button 
+                          onClick={() => {
+                            if (!newNote) return;
+                            appointmentsAPI.addNote(selectedApp._id, newNote).then((res) => {
+                              toast.success('Note added');
+                              setNewNote('');
+                              setSelectedApp(res.data.data);
+                              queryClient.invalidateQueries(['appointments']);
+                            });
+                          }}
+                          className="h-10 px-4 bg-blue-600 text-[10px] font-black uppercase tracking-widest rounded-lg text-white"
+                        >
+                          ADD
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

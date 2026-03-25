@@ -18,28 +18,23 @@ export default function DashboardHome() {
   const { data: summary, isLoading, isError } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: async () => {
-      try {
-        const resp = await analyticsAPI.getDashboard();
-        return resp.data.data;
-      } catch (err) {
-        // Fallback to static data
-        return {
-          leads: userStats.totalProjects,
-          projects: userStats.activeProjects,
-          revenue: 45000,
-          messages: 3,
-          recentLeads: projects.slice(0, 3).map(p => ({ ...p, name: p.client, projectType: p.category, status: p.status, createdAt: new Date() })),
-          activity: [
-            { _id: '1', action: 'Initialized AI Business Suite project', createdAt: new Date() },
-            { _id: '2', action: 'Updated security protocols for user', createdAt: new Date() }
-          ],
-          notifications: 3
-        };
-      }
-    }
+      const resp = await analyticsAPI.getDashboard();
+      return resp.data.data;
+    },
+    retry: 2
   });
 
   if (isLoading) return <LoadingScreen />;
+  if (isError) return (
+    <div className="h-[70vh] flex flex-col items-center justify-center text-center space-y-6">
+       <div className="w-20 h-20 rounded-3xl bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
+          <AlertCircle size={40} />
+       </div>
+       <h2 className="text-2xl font-black text-white uppercase tracking-tighter">System Offline</h2>
+       <p className="text-gray-500 max-w-xs italic">Failed to synchronize with the core engine. Please refresh or check your connection.</p>
+       <button onClick={() => window.location.reload()} className="btn-primary">Retry Synchronization</button>
+    </div>
+  );
 
   return (
     <div className="space-y-16 pb-32">
@@ -53,10 +48,10 @@ export default function DashboardHome() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600/10 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest text-blue-500 mb-6 font-display">
             <Activity size={12} className="animate-pulse" /> SYSTEM ONLINE
           </div>
-          <h1 className="text-5xl md:text-5xl font-black text-white mb-6 font-display uppercase tracking-tighter shrink-0 leading-[0.85]">
-            Hello, <span className="gradient-text-blue">{user?.name?.split(' ')[0] || 'Guest'}</span>
+          <h1 className="text-3xl md:text-3xl font-black text-white mb-6 font-display uppercase tracking-tighter shrink-0 leading-[0.85]">
+            Hello, <span className="gradient-text-blue">{user?.name || 'Guest'}</span>
           </h1>
-          <p className="text-xl text-gray-500 italic font-medium tracking-human leading-relaxed">
+          <p className="text-md text-gray-500 italic font-medium tracking-human leading-relaxed">
             {isAdmin
               ? "Your agency command center is synchronized. Managing global assets and development sprints."
               : "Welcome to your digital headquarters. Tracking your high-performance product build."}
@@ -78,24 +73,24 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* Stats Engine */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {isAdmin ? (
           <>
-            <StatCard label="Total Leads" val={summary?.leads || 0} icon={Users} trend="+12%" color="blue" />
-            <StatCard label="Active Projects" val={summary?.projects || 0} icon={FolderKanban} trend="+2" color="cyan" />
-            <StatCard label="Monthly Revenue" val={`₹${summary?.revenue?.toLocaleString('en-IN') || 0}`} icon={TrendingUp} trend="+24%" color="green" />
-            <StatCard label="Unread Messages" val={summary?.messages || 0} icon={MessageSquare} trend="4 new" color="orange" />
+            <StatCard label="Total Leads" val={summary?.leads || 0} icon={Users} trend={`+${summary?.recentLeads?.length || 0} today`} color="blue" />
+            <StatCard label="Active Projects" val={summary?.projects || 0} icon={FolderKanban} trend="SYNCED" color="cyan" />
+            <StatCard label="Monthly Revenue" val={`₹${summary?.revenue?.toLocaleString('en-IN') || 0}`} icon={TrendingUp} trend={`${summary?.revenueGrowth >= 0 ? '+' : ''}${summary?.revenueGrowth}%`} color="green" />
+            <StatCard label="Live Alerts" val={summary?.notifications || 0} icon={Bell} trend="ACTION REQ" color="orange" />
           </>
         ) : (
           <>
             <StatCard label="Active Sprints" val={summary?.projects || 0} icon={FolderKanban} trend="IN PROGRESS" color="blue" />
-            <StatCard label="Paid Invoices" val={summary?.invoiced || 0} icon={CreditCard} trend="1 PENDING" color="green" />
-            <StatCard label="OS Notifications" val={summary?.notifications || 0} icon={Bell} trend="2 NEW" color="orange" />
+            <StatCard label="Paid Invoices" val={summary?.invoiced || 0} icon={CreditCard} trend={`${summary?.pendingInvoices || 0} PENDING`} color="green" />
+            <StatCard label="OS Notifications" val={summary?.notifications || 0} icon={Bell} trend="NEW" color="orange" />
             <StatCard label="Response Latency" val="12m" icon={Clock} trend="AVG TIME" color="cyan" />
           </>
         )}
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         {/* Main Feed Surface */}
@@ -208,76 +203,6 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* Admin System Pulse (Interesting & Unique Feature) */}
-        {/* {isAdmin && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="glass-card-premium p-12 border-blue-500/10 bg-[#050508] relative overflow-hidden rounded-[60px]"
-          >
-            <div className="absolute top-0 right-0 h-96 bg-blue-600/5 blur-[120px] rounded-full -mr-48 -mt-48" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
-              <div>
-                <div className="flex items-center gap-4 mb-8">
-                  <div className=" h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shadow-glow-blue/10">
-                    <Globe size={24} />
-                  </div>
-                  <h3 className="text-3xl font-black text-white uppercase  font-display italic">Global Lead <span className="gradient-text-blue">Velocity</span></h3>
-                </div>
-                <div className="space-y-8">
-                  <div className="p-6 rounded-[32px] bg-white/[0.02] border border-white/5 group hover:bg-white/[0.05] transition-all">
-                    <div className="flex justify-between items-end mb-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-600">Sync with Google ADS</span>
-                      <span className="text-[10px] font-black text-[#39ff14] flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#39ff14] animate-pulse" /> OPTIMIZED</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: '82%' }}
-                        className="h-full bg-blue-500 shadow-glow-blue"
-                      />
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-4 italic">Lead flow has increased by 14.2% since the new Landing Page OS v2 launch.</p>
-                  </div>
-                  <div className="flex gap-4">
-                    <button className="btn-primary h-14 flex-1 px-8 text-[10px] uppercase font-black tracking-widest no-underline shadow-glow-blue/20">
-                      Launch Heatmap <ArrowRight size={16} className="ml-2" />
-                    </button>
-                    <button className="btn-os h-14 flex-1 px-8 text-[10px] uppercase font-black tracking-widest border-white/5">
-                      Audit Funnel
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative aspect-square lg:aspect-video rounded-[40px] border-2 border-white/5 overflow-hidden bg-white/[0.01] flex items-center justify-center">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(59,130,246,0.1)_0%,_transparent_70%)]" />
-                <div className="text-center space-y-6 relative z-10 p-10">
-                  <div className="w-20 h-20 rounded-full border-2 border-dashed border-blue-500/20 flex items-center justify-center mx-auto animate-spin-slow">
-                    <Activity size={32} className="text-blue-500" />
-                  </div>
-                  <h4 className="text-xl font-black text-white uppercase tracking-widest">Neural OS Performance</h4>
-                  <div className="flex justify-center gap-8">
-                    <div className="text-center">
-                      <p className="text-lg font-black text-white">12ms</p>
-                      <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest">Latency</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-black text-white">0.2%</p>
-                      <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest">Bounce Rate</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-black text-white">94%</p>
-                      <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest">Efficiency</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )} */}
-
         {/* Sidebar Dispatch */}
         <aside className="lg:col-span-8 space-y-12">
           <div className="glass-card-premium p-10 rounded-[40px] border-white/5 bg-white/[0.01]">
@@ -346,7 +271,8 @@ export default function DashboardHome() {
   );
 }
 
-function StatCard({ label, val, icon: Icon, trend, color }) {
+function StatCard(props) {
+  const { label, val, icon: Icon, trend, color } = props;
   const colors = {
     blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
     green: 'text-[#39ff14] bg-[#39ff14]/10 border-[#39ff14]/20',
@@ -359,7 +285,7 @@ function StatCard({ label, val, icon: Icon, trend, color }) {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -8, scale: 1.02 }}
-      className={`glass-card p-10 border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-all group`}
+      className={`glass-card p-5 border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-all group`}
     >
       <div className="flex justify-between items-start mb-10">
         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 ${colors[color]} transform transition-transform group-hover:rotate-12`}>
@@ -368,7 +294,7 @@ function StatCard({ label, val, icon: Icon, trend, color }) {
         <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity italic">{trend}</span>
       </div>
       <div>
-        <p className="text-5xl font-black text-white font-display mb-3 tracking-tighter shrink-0">{val}</p>
+        <p className="text-3xl font-black text-white font-display mb-3 tracking-tighter shrink-0">{val}</p>
         <p className="text-[10px] text-gray-600 font-black uppercase tracking-[0.3em] italic">{label}</p>
       </div>
     </motion.div>

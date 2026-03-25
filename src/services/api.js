@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.DEV
+  ? 'http://localhost:5000/api'
+  : 'https://the-stack-guy.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -38,6 +40,9 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateProfile: (data) => api.put('/auth/profile', data),
   getUsers: (params) => api.get('/auth/users', { params }),
+  createUser: (data) => api.post('/auth/users', data),
+  updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/auth/users/${id}`),
   seedAdmin: () => api.post('/auth/seed-admin'),
   getAdmin: () => api.get('/auth/admin'),
 };
@@ -50,6 +55,7 @@ export const leadsAPI = {
   update: (id, data) => api.patch(`/leads/${id}`, data),
   delete: (id) => api.delete(`/leads/${id}`),
   addFollowUp: (id, data) => api.post(`/leads/${id}/follow-up`, data),
+  scheduleMeeting: (id, data) => api.post(`/leads/${id}/schedule-meeting`, data),
 };
 
 // Projects
@@ -60,6 +66,19 @@ export const projectsAPI = {
   update: (id, data) => api.patch(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
   reorderKanban: (data) => api.patch('/projects/kanban/reorder', data),
+  addFile: (projectId, data) => api.post(`/projects/${projectId}/files`, data),
+  deleteFile: (projectId, fileId) => api.delete(`/projects/${projectId}/files/${fileId}`),
+  // Milestones
+  addMilestone: (id, data) => api.post(`/projects/${id}/milestones`, data),
+  updateMilestone: (id, milestoneId, data) => api.patch(`/projects/${id}/milestones/${milestoneId}`, data),
+  deleteMilestone: (id, milestoneId) => api.delete(`/projects/${id}/milestones/${milestoneId}`),
+};
+
+// Vault
+export const vaultAPI = {
+  getProjectFiles: (projectId) => api.get(`/projects/${projectId}`), // Using project getOne as it includes files
+  addFile: (projectId, data) => api.post(`/projects/${projectId}/files`, data),
+  deleteFile: (projectId, fileId) => api.delete(`/projects/${projectId}/files/${fileId}`),
 };
 
 // Invoices
@@ -69,6 +88,7 @@ export const invoicesAPI = {
   create: (data) => api.post('/invoices', data),
   update: (id, data) => api.patch(`/invoices/${id}`, data),
   delete: (id) => api.delete(`/invoices/${id}`),
+  addPayment: (id, data) => api.post(`/invoices/${id}/pay`, data),
 };
 
 // Proposals
@@ -87,6 +107,8 @@ export const appointmentsAPI = {
   book: (data) => api.post('/appointments', data),
   getAll: (params) => api.get('/appointments', { params }),
   update: (id, data) => api.patch(`/appointments/${id}`, data),
+  createManual: (data) => api.post('/appointments/admin', data),
+  addNote: (id, note) => api.post(`/appointments/${id}/notes`, { note }),
 };
 
 // Blog
@@ -121,13 +143,11 @@ export const testimonialsAPI = {
 // Messages
 export const messagesAPI = {
   getByUser: (userId) => api.get(`/messages/user/${userId}`),
-  send: (data) => api.post('/messages', data),
-
-  markReadUser: (userId) => api.patch(`/messages/read/user/${userId}`),
-  getUnreadPerUser: () => api.get('/messages/unread/users'),
-
   getByProject: (projectId) => api.get(`/messages/project/${projectId}`),
-
+  getSupportConversations: () => api.get('/messages/admin/support'),
+  send: (data) => api.post('/messages', data),
+  replyViaEmail: (data) => api.post('/messages/reply-email', data),
+  markRead: (userId) => api.patch(`/messages/read/${userId}`),
   getUnreadCount: () => api.get('/messages/unread/count'),
 };
 
@@ -145,6 +165,19 @@ export const analyticsAPI = {
   getDashboard: () => api.get('/analytics/dashboard'),
 };
 
+// AI
+export const aiAPI = {
+  chat: (messages, model) => api.post('/ai/chat', { messages, model }),
+  generateBlog: (data) => api.post('/ai/generate-blog', data),
+  analyzeLead: (id) => api.post(`/ai/analyze-lead/${id}`),
+  generateRoadmap: (id) => api.post(`/ai/generate-roadmap/${id}`),
+};
+
+export const crmAPI = {
+  sync: () => api.post('/crm/sync'),
+  updateSettings: (data) => api.patch('/crm/settings', data),
+};
+
 // Services
 export const servicesAPI = {
   getAll: () => api.get('/services'),
@@ -153,7 +186,16 @@ export const servicesAPI = {
 
 // Audit
 export const auditAPI = {
-  audit: (url) => api.post('/audit', { url }),
+  getLogs: (params) => api.get('/audit/logs', { params }),
+  getSummary: () => api.get('/audit/summary'),
+};
+
+// Community
+export const communityAPI = {
+  getAll: (params) => api.get('/community', { params }),
+  create: (data) => api.post('/community', data),
+  like: (id) => api.post(`/community/${id}/like`),
+  comment: (id, data) => api.post(`/community/${id}/comment`, data),
 };
 
 export default api;

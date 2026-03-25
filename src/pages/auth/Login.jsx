@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, LogIn, Zap, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Zap, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldCheck, Phone, CheckCircle, LogIn, MessageCircle } from 'lucide-react';
 import { useAuthStore } from '../../store';
 import { authAPI } from '../../services/api';
+import { Helmet } from 'react-helmet-async';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
+  email: z.string().email('Enter valid email'),
+  password: z.string().min(6, 'Min 6 characters')
 });
 
 export default function Login() {
@@ -18,7 +19,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
   const login = useAuthStore(state => state.login);
 
   const { register, handleSubmit, formState: { errors } } = useForm({
@@ -37,149 +37,197 @@ export default function Login() {
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid credentials. Use provided Quick Access keys below.');
+      setError(err.response?.data?.error || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
   };
 
-  const setDemoLogin = (email) => {
-    const data = {
-      email: email === 'admin' ? 'admin@thestackguy.com' : 'client@thestackguy.com',
-      password: 'admin123'
-    };
-    onSubmit(data);
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center pt-20 pb-20 overflow-hidden relative bg-[#050508]">
+    <>
+    <Helmet>
+        <title>Login | The Stack Guy Dashboard</title>
+        <meta name="description" content="Login to access high-performance MERN systems built by The Stack Guy." />
+        <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
+    
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ background: 'var(--color-bg-primary)' }}>
       {/* Animated Background Orbs */}
-      <div className="absolute top-0 -left-40 w-[500px] h-[500px] bg-blue-600/10 blur-[150px] -z-10 rounded-full animate-pulse" />
-      <div className="absolute bottom-0 -right-40 w-[500px] h-[500px] bg-cyan-600/10 blur-[150px] -z-10 rounded-full animate-pulse-slow" />
+      <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-blue-500/10 blur-[200px] -z-10 rounded-full animate-pulse" />
+      <div className="absolute bottom-1/4 -left-40 w-[600px] h-[600px] bg-[#39ff14]/5 blur-[200px] -z-10 rounded-full animate-pulse-slow" />
+      
+      <div className="container-custom relative z-10">
+        <div className="mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          {/* Left Side: Pitch */}
+          <div className="lg:col-span-5 hidden lg:block">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+             <h2 className="text-3xl font-bold text-white mb-6 font-display uppercase tracking-widest leading-tight">
+              Back to <span className="gradient-text">Building</span> 🚀
+            </h2>
 
-      <div className="container-custom relative z-10 px-6">
-        <div className=" mx-auto">
-          {/* Header Link */}
-          <Link to="/" className="inline-flex items-center gap-2 text-[#6b7280] hover:text-white transition-colors mb-10 no-underline text-xs font-black uppercase tracking-widest group">
-            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Home
-          </Link>
+            <p className="text-gray-400 text-sm mb-8">
+              Your projects. Your clients. Your momentum — all waiting for you.
+            </p>
 
-          {/* Form Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-10 md:p-14 rounded-[40px] border-white/5 border-2 shadow-2xl relative overflow-hidden"
+            <ul className="space-y-6">
+              {[
+                {
+                  icon: <Zap size={16} />,
+                  title: 'Instant Dashboard',
+                  desc: 'Jump straight into your active work — no delays.'
+                },
+                {
+                  icon: <CheckCircle size={16} />,
+                  title: 'Live Project Tracking',
+                  desc: 'See progress, updates & milestones in real-time.'
+                },
+                {
+                  icon: <ShieldCheck size={16} />,
+                  title: 'Secure Payments',
+                  desc: 'Track earnings with full transparency & safety.'
+                },
+                {
+                  icon: <MessageCircle size={16} />,
+                  title: 'Client Conversations',
+                  desc: 'All chats organized — no missed messages.'
+                }
+              ].map(item => (
+                <li key={item.title} className="flex gap-4 group">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0 mt-1 group-hover:bg-blue-500/20 transition">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold text-sm mb-1">
+                      {item.title}
+                    </h4>
+                    <p className="text-[#9ca3af] text-xs leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-12 pt-10 border-t border-white/5">
+              <p className="text-[#6b7280] text-xs font-bold uppercase tracking-widest mb-4">
+                ⚡ Productivity unlocked
+              </p>
+              <p className="text-gray-400 text-sm">
+                Log in and continue where you left off — faster than ever.
+              </p>
+            </div>
+            </motion.div>
+          </div>
+
+          {/* Right Side: Form Card */}
+          <div className="lg:col-span-7">
+            <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="w-full bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl"
           >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-50" />
 
-            <div className="text-center mb-12">
-              <div className="w-20 h-20 rounded-[30px] bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] flex items-center justify-center mx-auto mb-8 shadow-glow-blue/20 rotate-3 transform transition-transform hover:rotate-6">
-                <Zap size={40} color="#fff" />
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
+                <Zap size={28} />
               </div>
-              <h1 className="text-4xl font-black text-white mb-2 font-display uppercase tracking-widest">Login <span className="gradient-text">OS</span></h1>
-              <p className="text-[#9ca3af] text-sm italic font-medium">Access your agency command center.</p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6b7280] flex items-center gap-2">
-                  <Mail size={12} className="text-blue-500" /> Identity / Email
-                </label>
+            <h2 className="text-2xl font-semibold text-center mb-2">
+              Welcome Back
+            </h2>
+
+            <p className="text-center text-gray-400 text-sm mb-8">
+              Login to your dashboard
+            </p>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+              {/* Email */}
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   {...register('email')}
                   type="email"
-                  placeholder="name@company.com"
-                  className={`input-field h-14 bg-white/[0.03] border-white/5 hover:border-white/10 focus:border-blue-500/50 rounded-2xl ${errors.email ? 'border-red-500/50' : ''}`}
+                  placeholder="Email"
+                  className="w-full h-14 pl-12 rounded-xl bg-white/[0.05] border border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                 />
-                {errors.email && <p className="text-[10px] text-red-400 font-bold uppercase tracking-tight">{errors.email.message}</p>}
+                {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6b7280] flex items-center gap-2">
-                    <Lock size={12} className="text-blue-500" /> Secure Key
-                  </label>
-                  <Link to="/forgot-password" size={12} className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-400 no-underline">Forgot?</Link>
-                </div>
-                <div className="relative">
-                  <input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className={`input-field h-14 bg-white/[0.03] border-white/5 hover:border-white/10 focus:border-blue-500/50 rounded-2xl ${errors.password ? 'border-red-500/50' : ''}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-[10px] text-red-400 font-bold uppercase tracking-tight">{errors.password.message}</p>}
+              {/* Password */}
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  className="w-full h-14 pl-12 pr-12 rounded-xl bg-white/[0.05] border border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+
+                {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
               </div>
 
+              {/* Error */}
               <AnimatePresence>
                 {error && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex gap-3 text-red-500"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex gap-2"
                   >
-                    <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                    <p className="text-xs font-bold leading-relaxed italic">{error}</p>
+                    <AlertCircle size={16} />
+                    {error}
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              <button
+              {/* Button */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.02 }}
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full h-16 text-sm font-black uppercase tracking-[0.3em] justify-center shadow-lg relative overflow-hidden group rounded-2xl"
+                className="w-full h-14 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 font-semibold flex items-center justify-center gap-2"
               >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <span className="relative z-10 flex items-center gap-3">
-                  {loading ? 'Processing...' : (
-                    <>
-                      Enter OS <LogIn size={20} />
-                    </>
-                  )}
-                </span>
-              </button>
+                {loading ? 'Signing in...' : <>Login <LogIn size={18} /></>}
+              </motion.button>
+
             </form>
 
-            {/* Demo Credentials Section */}
-            <div className="mt-10 pt-10 border-t border-white/5">
-              <p className="text-[10px] font-black text-[#6b7280] uppercase tracking-[0.2em] mb-6 text-center italic">Quick Access Demo</p>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => setDemoLogin('admin')}
-                  className="p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[10px] font-black text-white uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Admin Portal
-                </button>
-                <button
-                  onClick={() => setDemoLogin('client')}
-                  className="p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[10px] font-black text-white uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Client Hub
-                </button>
-              </div>
+            {/* Footer */}
+            <div className="mt-6 text-center text-sm text-gray-400">
+              Don’t have an account?
+              <Link to="/register" className="text-blue-400 ml-2 hover:text-blue-300">
+                Sign up
+              </Link>
             </div>
 
-            <div className="mt-10 text-center">
-              <p className="text-[#6b7280] text-[10px] font-black tracking-widest uppercase">
-                New User? <Link to="/register" className="text-blue-500 hover:text-blue-400 no-underline ml-1">Deploy Account</Link>
-              </p>
+            <div className="mt-6 flex justify-center items-center gap-2 text-xs text-gray-500">
+              <ShieldCheck size={14} className="text-green-400" />
+              Secure & encrypted
             </div>
 
-            <div className="mt-10 pt-6 border-t border-white/5 flex items-center justify-center gap-3 text-[#4b5563] text-[10px] font-bold uppercase tracking-[0.2em]">
-              <ShieldCheck size={14} className="text-green-500/50" /> AES-256 Session Encrypted
-            </div>
           </motion.div>
+          </div>
         </div>
       </div>
     </div>
+    </>
   );
 }

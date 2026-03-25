@@ -118,7 +118,7 @@ export default function Portfolio() {
                     className="group flex flex-col gap-6"
                   >
                     {/* IMAGE */}
-                    <div className="relative rounded-3xl overflow-hidden h-[400px]">
+                    <div className="relative rounded-3xl overflow-hidden h-[300px]">
                       <img
                         src={coverImage}
                         alt={project.title}
@@ -135,7 +135,7 @@ export default function Portfolio() {
                     </div>
 
                     {/* CONTENT */}
-                    <div className="glass-card p-10 flex flex-col gap-6 flex-1">
+                    <div className="glass-card p-5 flex flex-col gap-2 flex-1">
                       <div className="flex justify-between items-start">
                         <h2 className="text-3xl font-bold text-white group-hover:text-[#3b82f6] transition-colors line-clamp-1">
                           {project.title}
@@ -180,7 +180,7 @@ export default function Portfolio() {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2 pt-6">
+                      <div className="flex flex-wrap gap-2 pt-2">
                         {project.technologies?.map(t => (
                           <span key={t} className="px-3 py-1 bg-white/5 border border-white/5 rounded-md text-[10px] uppercase text-[#6b7280]">
                             {t}
@@ -190,7 +190,7 @@ export default function Portfolio() {
 
                       <Link
                         to={`/portfolio/${project.slug}`}
-                        className="flex w-full justify-center items-center btn-secondary p-6 rounded-xl"
+                        className="flex w-full justify-center items-center btn-secondary rounded-xl bg-gray-300 text-black hover:bg-blue-600 hover:text-white transition-colors py-4"
                       >
                         View Full Case Study <ExternalLink size={16} />
                       </Link>

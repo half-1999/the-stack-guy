@@ -2,15 +2,15 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FolderKanban, FileText, CreditCard,
-  MessageSquare, Calendar, Bell, Settings, LogOut, Zap, Users, Search,
-  BarChart3, FileSignature, Database, MessageCircle, Sparkles, Globe,
+  MessageSquare, Calendar, Bell, Settings, LogOut, Zap, Users,
+  BarChart3, MessageCircle, Sparkles, Globe,
   ShieldCheck, HelpCircle, HardDrive, Gift, X
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '../../store';
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore();
-  const { sidebarOpen, toggleSidebar } = useUIStore();
+  const { sidebarOpen, toggleSidebar, notificationCount } = useUIStore();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
 
@@ -18,6 +18,7 @@ export default function Sidebar() {
     { label: 'OS Overview', path: '/dashboard', icon: LayoutDashboard },
     { label: 'AI Studio', path: '/dashboard/ai-studio', icon: Sparkles, badge: 'NEW' },
     { label: 'Community', path: '/dashboard/community', icon: Globe },
+    { label: 'Alerts Hub', path: '/dashboard/notifications', icon: Bell, count: notificationCount },
     { label: 'Partner Program', path: '/dashboard/referral', icon: Gift, badge: '₹₹₹' },
     { label: 'Intelligence', path: '/dashboard/analytics', icon: BarChart3 },
   ];
@@ -35,7 +36,9 @@ export default function Sidebar() {
     { label: 'Bookings', path: '/dashboard/appointments', icon: Calendar },
     { label: 'Users', path: '/dashboard/users', icon: Users },
     { label: 'Leads', path: '/dashboard/leads', icon: Users },
+    { label: 'Support & Feedback', path: '/dashboard/support', icon: HelpCircle },
     { label: 'Website Audit', path: '/dashboard/audit', icon: Globe },
+    { label: 'Security Audit', path: '/dashboard/audit-logs', icon: ShieldCheck },
   ];
 
   const handleLogout = () => {

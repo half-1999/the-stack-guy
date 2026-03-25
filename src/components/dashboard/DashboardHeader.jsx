@@ -1,82 +1,172 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { 
-  Bell, Search, Plus, Zap, MessageSquare, 
-  HelpCircle, Menu, X, ChevronRight, LayoutDashboard 
+
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  Bell, Search, HelpCircle, Menu, ChevronRight,
+  LayoutDashboard, User, Settings, LogOut
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore, useUIStore } from '../../store';
+import GlobalSearch from './GlobalSearch';
 
 export default function DashboardHeader() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { toggleSidebar } = useUIStore();
   const location = useLocation();
-  const isAdmin = user?.role === 'admin';
 
-  // Extract page title from pathname
+  const [showProfile, setShowProfile] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Extract title
   const pathParts = location.pathname.split('/').filter(Boolean);
-  const pageTitle = pathParts[pathParts.length - 1] || 'Overview';
+  const pageTitle = pathParts[pathParts.length - 1] || 'overview';
+
+  const isDashboardHome = location.pathname === "/dashboard";
+
+  // ⌘K / Ctrl+K shortcut
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
-    <header className="sticky top-0 right-0 left-0 h-20 glass-card border-b border-white/5 z-40 px-8 flex items-center justify-between bg-gradient-to-r from-transparent via-[#0a0a11]/10 to-transparent">
-      {/* Mobile Menu Toggle */}
-      <button 
-        onClick={toggleSidebar}
-        className="lg:hidden w-10 h-10 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-white"
-      >
-        <Menu size={20} />
-      </button>
+    <>
+      <header className="sticky top-0 z-40 h-20 px-6 lg:px-10 flex items-center justify-between backdrop-blur-xl bg-[#0a0a11]/70 border-b border-white/5">
 
-      {/* Left Side: Breadcrumbs / Title */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-[#4b5563] text-xs font-black uppercase tracking-widest">
-           <LayoutDashboard size={14} /> 
-           <ChevronRight size={14} />
-           <span className="text-white">{pageTitle.replace('-', ' ')}</span>
-        </div>
-      </div>
+        {/* LEFT */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={toggleSidebar}
+            className="lg:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white"
+          >
+            <Menu size={20} />
+          </button>
 
-      {/* Search Bar */}
-      <div className="hidden md:flex flex-1 max-w-lg mx-12">
-        <div className="relative w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4b5563]" size={18} />
-          <input 
-            type="text" 
-            placeholder={isAdmin ? "Search leads, projects, invoices..." : "Search my projects, messages..."} 
-            className="w-full h-12 bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 text-sm text-white focus:outline-none focus:border-[#3b82f6]/40 transition-all font-medium"
-          />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-1">
-            <span className="w-5 h-5 rounded bg-white/5 border border-white/10 text-[#6b7280] flex items-center justify-center text-[10px] font-black uppercase">⌘</span>
-            <span className="w-5 h-5 rounded bg-white/5 border border-white/10 text-[#6b7280] flex items-center justify-center text-[10px] font-black uppercase">F</span>
+          <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gray-500">
+            {!isDashboardHome && (
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="flex items-center gap-1 hover:text-white transition"
+                >
+                  <LayoutDashboard size={14} />
+                  Dashboard
+                </Link>
+                <ChevronRight size={14} />
+              </>
+            )}
+            <span className="text-white">{pageTitle.replace('-', ' ')}</span>
           </div>
         </div>
-      </div>
 
-      {/* Right Side: Actions & Profile */}
-      <div className="flex items-center gap-3">
-        {/* Quick Help */}
-        <button className="hidden sm:flex w-10 h-10 rounded-xl bg-white/2 border border-white/5 items-center justify-center text-[#9ca3af] hover:text-white transition-all">
-          <HelpCircle size={20} />
-        </button>
+        {/* CENTER SEARCH */}
+        <div className="hidden md:flex flex-1 mx-10">
+          <button
+            onClick={() => setShowSearch(true)}
+            className="w-full h-12 flex items-center gap-3 px-4 rounded-2xl bg-white/[0.04] border border-white/5 text-gray-400 hover:text-white transition-all"
+          >
+            <Search size={18} />
+            <span className="text-sm">Search anything...</span>
 
-        {/* Notifications */}
-        <div className="relative">
-          <button className="w-10 h-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-white transition-all">
-            <Bell size={20} />
+            <div className="ml-auto flex gap-1">
+              <kbd className="px-2 py-1 text-[10px] bg-white/5 rounded border border-white/10">⌘</kbd>
+              <kbd className="px-2 py-1 text-[10px] bg-white/5 rounded border border-white/10">K</kbd>
+            </div>
           </button>
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#0a0a11] animate-pulse" />
         </div>
 
-        {/* Action Button */}
-        {isAdmin ? (
-          <button className="btn-primary h-12 text-xs no-underline font-black uppercase tracking-widest px-6 shadow-glow-blue/20">
-            <Plus size={16} /> Create
+        {/* RIGHT */}
+        <div className="flex items-center gap-3">
+
+          {/* Support */}
+          <button
+            onClick={() => alert('Open support modal')}
+            className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-400 hover:text-white"
+          >
+            <HelpCircle size={20} />
           </button>
-        ) : (
-          <button className="btn-secondary h-12 text-xs no-underline font-black uppercase tracking-widest px-6 border-blue-500/20 text-[#3b82f6]">
-            <Zap size={16} /> Book Call
-          </button>
-        )}
-      </div>
-    </header>
+
+          {/* Notifications */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(prev => !prev)}
+              className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-400 hover:text-white"
+            >
+              <Bell size={20} />
+            </button>
+
+            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+
+            <AnimatePresence>
+              {showNotifications && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-3 w-80 rounded-2xl bg-[#0a0a11] border border-white/10 shadow-xl p-4"
+                >
+                  <p className="text-xs text-gray-400">Notifications</p>
+                  <div className="mt-3 space-y-2 text-sm text-white">
+                    <p>🚀 New project created</p>
+                    <p>💬 You have 3 unread messages</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* PROFILE */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProfile(prev => !prev)}
+              className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold"
+            >
+              {user?.name?.charAt(0).toUpperCase()}
+            </button>
+
+            <AnimatePresence>
+              {showProfile && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-3 w-56 rounded-2xl bg-[#0a0a11] border border-white/10 shadow-xl p-3"
+                >
+                  <div className="px-3 py-2 border-b border-white/5 mb-2">
+                    <p className="text-sm text-white font-bold">{user?.name}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-white">
+                    <User size={16} /> Profile
+                  </button>
+
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-white">
+                    <Settings size={16} /> Settings
+                  </button>
+
+                  <button
+                    onClick={logout}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300"
+                  >
+                    <LogOut size={16} /> Logout
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </header>
+
+      {/* GLOBAL SEARCH */}
+      <GlobalSearch showSearch={showSearch} setShowSearch={setShowSearch} />
+    </>
   );
 }

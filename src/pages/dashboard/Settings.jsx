@@ -10,7 +10,7 @@ import {
   Settings as SettingsIcon, Share2, Globe, Calendar, ExternalLink, Activity, ShieldCheck
 } from 'lucide-react';
 import { useAuthStore } from '../../store';
-import { authAPI } from '../../services/api';
+import { authAPI, crmAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const profileSchema = z.object({
@@ -22,6 +22,7 @@ const profileSchema = z.object({
 
 export default function Settings() {
   const { user, updateUser } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
 
@@ -60,6 +61,7 @@ export default function Settings() {
     { id: 'booking', icon: Calendar, label: 'Calendly' },
     { id: 'billing', icon: CreditCard, label: 'Treasury' },
     { id: 'notifications', icon: Bell, label: 'Alerts' },
+    ...(isAdmin ? [{ id: 'crm', icon: Zap, label: 'CRM Sync' }] : []),
   ];
 
   return (
@@ -267,7 +269,6 @@ export default function Settings() {
                       </div>
                    </div>
                 )}
-
                 {activeTab === 'notifications' && (
                    <div className="space-y-12">
                       <h3 className="text-2xl font-black text-white uppercase tracking-widest font-display">Alert Protocols</h3>
@@ -292,6 +293,77 @@ export default function Settings() {
                              </div>
                           </div>
                         ))}
+                      </div>
+                   </div>
+                )}
+
+                {activeTab === 'crm' && isAdmin && (
+                   <div className="space-y-16">
+                      <div className="pb-10 border-b border-white/5 space-y-6">
+                         <h3 className="text-3xl font-black text-white uppercase tracking-tighter font-display italic leading-none">Neural <span className="text-blue-500">CRM</span> Bridge</h3>
+                         <p className="text-gray-400 italic text-sm max-w-xl">Synchronize incoming leads from external Google Forms and Sheets into your primary OS pipeline.</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                         <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Google Cloud API Key</label>
+                            <input 
+                               type="password" 
+                               defaultValue={user.settings?.crm?.googleApiKey}
+                               id="googleApiKey"
+                               placeholder="AIzaSy..." 
+                               className="input-field h-14 bg-white/[0.02] border-white/10 italic" 
+                            />
+                         </div>
+                         <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Google Sheet ID</label>
+                            <input 
+                               type="text" 
+                               defaultValue={user.settings?.crm?.googleSheetId}
+                               id="googleSheetId"
+                               placeholder="1BxiM..." 
+                               className="input-field h-14 bg-white/[0.02] border-white/10 italic" 
+                            />
+                         </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-6 pt-4">
+                         <button 
+                            onClick={async () => {
+                               const googleApiKey = document.getElementById('googleApiKey').value;
+                               const googleSheetId = document.getElementById('googleSheetId').value;
+                               setLoading(true);
+                               try {
+                                  await crmAPI.updateSettings({ googleApiKey, googleSheetId });
+                                  updateUser({ ...user, settings: { ...user.settings, crm: { googleApiKey, googleSheetId } } });
+                                  toast.success('Neural CRM parameters updated.');
+                               } catch (err) {
+                                  toast.error('Failed to update CRM credentials.');
+                               } finally {
+                                  setLoading(false);
+                               }
+                            }}
+                            className="btn-primary"
+                         >
+                            Deploy Config
+                         </button>
+                         <button 
+                            onClick={async () => {
+                               setLoading(true);
+                               const tid = toast.loading('Initiating Neural Sync...');
+                               try {
+                                  const resp = await crmAPI.sync();
+                                  toast.success(`Sync Complete: Captured ${resp.data.count} new signal(s).`, { id: tid });
+                               } catch (err) {
+                                  toast.error(err.response?.data?.error || 'Synchronization failure detected.', { id: tid });
+                               } finally {
+                                  setLoading(false);
+                               }
+                            }}
+                            className="px-10 h-14 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 flex items-center gap-3 transition-all"
+                         >
+                            <Activity size={18} /> Manual Sync Now
+                         </button>
                       </div>
                    </div>
                 )}

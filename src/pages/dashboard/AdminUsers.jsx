@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store';
 import { authAPI } from '../../services/api';
+import toast from 'react-hot-toast';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
 export default function AdminUsers() {
@@ -65,9 +66,23 @@ export default function AdminUsers() {
               className="w-full h-12 bg-white/5 border border-white/5 rounded-2xl pl-12 pr-4 text-xs font-bold text-white focus:border-blue-500/50 outline-none transition-all"
             />
           </div>
-          {/* <button className="btn-primary h-12 text-xs no-underline font-black uppercase tracking-widest px-8 shadow-glow-blue/20">
+          <button 
+            onClick={() => {
+              const name = prompt('Name:');
+              const email = prompt('Email:');
+              const password = prompt('Password (min 6 chars):');
+              const role = prompt('Role (admin/client/student):', 'client');
+              if (name && email && password && role) {
+                authAPI.createUser({ name, email, password, role }).then(() => {
+                  toast.success('User created!');
+                  queryClient.invalidateQueries(['admin-users']);
+                }).catch(err => toast.error(err.response?.data?.error || 'Failed to create user'));
+              }
+            }}
+            className="btn-primary h-12 text-xs no-underline font-black uppercase tracking-widest px-8 shadow-glow-blue/20"
+          >
             <UserPlus size={16} className="mr-2" /> Add User
-          </button> */}
+          </button>
         </div>
       </div>
 
@@ -75,8 +90,8 @@ export default function AdminUsers() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <StatsBox label="Total Users" val={users?.length || 0} icon={Users} color="blue" />
         <StatsBox label="Active Clients" val={users?.filter(u => u.role === 'client').length || 0} icon={User} color="green" />
+        <StatsBox label="Students" val={users?.filter(u => u.role === 'student').length || 0} icon={Zap} color="orange" />
         <StatsBox label="Administrators" val={users?.filter(u => u.role === 'admin').length || 0} icon={Shield} color="cyan" />
-        <StatsBox label="New Today" val="2" icon={Zap} color="orange" />
       </div>
 
       {/* Users Table */}
@@ -108,9 +123,12 @@ export default function AdminUsers() {
                   </td>
                   <td className="px-8 py-8">
                     <div className="flex flex-col gap-2">
-                      <span className={`px-4 py-1.5 rounded-full border text-[8px] font-black uppercase tracking-widest inline-flex items-center gap-2 max-w-fit ${u.role === 'admin' ? 'text-[#3b82f6] bg-blue-500/10 border-blue-500/20 shadow-glow-blue/5' : 'text-[#6b7280] bg-white/5 border-white/5'
+                      <span className={`px-4 py-1.5 rounded-full border text-[8px] font-black uppercase tracking-widest inline-flex items-center gap-2 max-w-fit ${
+                        u.role === 'admin' ? 'text-[#3b82f6] bg-blue-500/10 border-blue-500/20 shadow-glow-blue/5' : 
+                        u.role === 'student' ? 'text-orange-500 bg-orange-500/10 border-orange-500/20 shadow-glow-orange/5' :
+                        'text-[#6b7280] bg-white/5 border-white/5'
                         }`}>
-                        {u.role === 'admin' ? <Shield size={10} /> : <User size={10} />}
+                        {u.role === 'admin' ? <Shield size={10} /> : u.role === 'student' ? <Zap size={10} /> : <User size={10} />}
                         {u.role}
                       </span>
                     </div>
@@ -125,14 +143,26 @@ export default function AdminUsers() {
                   </td>
                   <td className="px-8 py-8">
                     <div className="flex items-center gap-3">
-                      <button className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-[#3b82f6] hover:bg-[#3b82f6]/5 transition-all">
-                        <MessageSquare size={16} />
-                      </button>
-                      <button className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-[#3b82f6] hover:bg-[#3b82f6]/5 transition-all">
-                        <ExternalLink size={16} />
+                      <button 
+                        title="Edit User"
+                        onClick={() => {
+                          const name = prompt('New Name (leave blank to keep current):', u.name);
+                          const role = prompt('New Role (admin/client/student):', u.role);
+                          if (name || role) {
+                            authAPI.updateUser(u._id, { name: name || u.name, role: role || u.role }).then(() => {
+                              toast.success('User updated!');
+                              queryClient.invalidateQueries(['admin-users']);
+                            }).catch(err => toast.error('Update failed'));
+                          }
+                        }}
+                        className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-[#3b82f6] hover:bg-[#3b82f6]/5 transition-all"
+                      >
+                        <User size={16} />
                       </button>
                       <button
-                        onClick={() => deleteMutation.mutate(u._id)}
+                        onClick={() => {
+                          if (confirm('Delete this user?')) deleteMutation.mutate(u._id)
+                        }}
                         className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-red-500 hover:bg-red-500/5 transition-all"
                       >
                         <Trash2 size={16} />

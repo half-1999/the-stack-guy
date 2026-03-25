@@ -109,7 +109,7 @@ export default function ServicePage() {
                 <span className="gradient-text">{titleEnd}</span>
               </h1>
 
-              <p className="text-2xl text-[#9ca3af] mb-10 leading-relaxed max-w-xl">
+              <p className="text-2xl text-[#9ca3af] mb-10 ">
                 {heroParts[0]}{' '}
                 <span className="gradient-text font-semibold">
                   {heroParts[1]}
@@ -164,7 +164,7 @@ export default function ServicePage() {
         <div className="container-custom">
 
           <div className="text-center mb-20">
-            <h2 className="section-title">
+            <h2 className="section-title font-bold text-4xl md:text-5xl mb-4 leading-tight">
               Why Your <span className="gradient-text">Business</span> Needs This
             </h2>
             <p className="section-subtitle mx-auto mt-4 max-w-2xl leading-relaxed">

@@ -39,7 +39,7 @@ const Register = lazy(() => import('./pages/auth/Register'));
 // Dashboard
 const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome'));
 const Projects = lazy(() => import('./pages/dashboard/Projects'));
-const ProjectDetail = lazy(() => import('./pages/public/ProjectDetail'));
+const ProjectDetail = lazy(() => import('./pages/dashboard/ProjectDetail'));
 const Messages = lazy(() => import('./pages/dashboard/Messages'));
 
 // 🔥 Dashboard (NEW - previously missing)
@@ -51,6 +51,7 @@ const Settings = lazy(() => import('./pages/dashboard/Settings'));
 const AIStudio = lazy(() => import('./pages/dashboard/AIStudio'));
 const Community = lazy(() => import('./pages/dashboard/Community'));
 const Referral = lazy(() => import('./pages/dashboard/Referral'));
+const Support = lazy(() => import('./pages/dashboard/Support'));
 const Drive = lazy(() => import('./pages/dashboard/Drive'));
 const Leads = lazy(() => import('./pages/dashboard/Leads'));
 const AdminUsers = lazy(() => import('./pages/dashboard/AdminUsers'));
@@ -58,6 +59,7 @@ const AdminBlog = lazy(() => import('./pages/dashboard/AdminBlog'));
 const AdminPortfolio = lazy(() => import('./pages/dashboard/AdminPortfolio'));
 const AdminPortfolioEdit = lazy(() => import('./pages/dashboard/AdminPortfolioEdit'));
 const Analytics = lazy(() => import('./pages/dashboard/Analytics'));
+const AuditLogs = lazy(() => import('./pages/dashboard/AuditLogs'));
 
 
 // 🔥 Optimized Query Client
@@ -155,6 +157,7 @@ function AnimatedRoutes() {
               <Route path="projects/:id" element={<ProjectDetail />} /> // incomplete
               <Route path="invoices" element={<Invoices />} />
               <Route path="messages" element={<Messages />} />
+              <Route path="support" element={<Support />} />
               <Route path="notifications" element={<Notifications />} /> // incomplete
               <Route path="appointments" element={<Appointments />} />
               <Route path="proposals" element={<Proposals />} /> // incomplete
@@ -170,6 +173,7 @@ function AnimatedRoutes() {
               <Route path="portfolio" element={<AdminPortfolio />} />
               <Route path="portfolio/:id" element={<AdminPortfolioEdit />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="audit-logs" element={<AuditLogs />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
 

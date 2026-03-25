@@ -1,16 +1,20 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
 import { 
   Bell, CheckCircle, Clock, Trash2, 
   Settings, MessageSquare, CreditCard, 
   Rocket, Zap, Filter, MoreVertical, 
-  CheckCheck, AlertCircle, TrendingUp
+  CheckCheck, AlertCircle, TrendingUp, Loader2
 } from 'lucide-react';
 import { notificationsAPI } from '../../services/api';
+import { useAuthStore } from '../../store';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
 export default function Notifications() {
   const queryClient = useQueryClient();
+  const { token } = useAuthStore();
 
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['notifications'],
@@ -20,8 +24,33 @@ export default function Notifications() {
     }
   });
 
+  useEffect(() => {
+    if (!token) return;
+
+    const socket = io(window.location.origin, {
+      auth: { token }
+    });
+
+    socket.on('new-notification', (notif) => {
+      queryClient.setQueryData(['notifications'], (old = []) => {
+        // Prevent duplicates
+        if (old.find(n => n._id === notif._id)) return old;
+        return [notif, ...old];
+      });
+    });
+
+    return () => socket.disconnect();
+  }, [token, queryClient]);
+
   const readMutation = useMutation({
     mutationFn: (id) => notificationsAPI.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notifications']);
+    }
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationsAPI.markAllRead(),
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
     }
@@ -53,8 +82,13 @@ export default function Notifications() {
         </div>
         
         <div className="flex gap-4">
-          <button className="h-12 px-6 rounded-xl bg-white/2 border border-white/5 text-[#6b7280] hover:text-white transition-all text-xs font-black uppercase tracking-widest flex items-center gap-2">
-            <CheckCheck size={16} /> Mark all read
+          <button 
+            onClick={() => markAllReadMutation.mutate()}
+            disabled={markAllReadMutation.isPending}
+            className="h-12 px-6 rounded-xl bg-white/2 border border-white/5 text-[#6b7280] hover:text-white transition-all text-xs font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+          >
+            {markAllReadMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <CheckCheck size={16} />}
+            Mark all read
           </button>
           <button className="h-12 w-12 rounded-xl bg-white/2 border border-white/5 text-[#6b7280] hover:text-white transition-all flex items-center justify-center">
             <Settings size={20} />

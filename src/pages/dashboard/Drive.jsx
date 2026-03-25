@@ -1,32 +1,64 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../../store';
+import { projectsAPI, vaultAPI } from '../../services/api';
+import LoadingScreen from '../../components/ui/LoadingScreen';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  File, FileText, Image as ImageIcon, 
-  Download, Trash2, Upload, Search, 
-  MoreVertical, Filter, Folder, Layout, 
-  Grid, List, CheckCircle, ExternalLink, Shield, Clock
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+import { ExternalLink, Grid, List, Search, Shield, Upload } from 'lucide-react';
 
 export default function Drive() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+  const queryClient = useQueryClient();
   const [view, setView] = useState('grid');
+  const [selectedProject, setSelectedProject] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [isUploading, setIsUploading] = useState(false);
 
-  const mockFiles = [
-    { id: 1, name: 'Brand_Guidelines_v2.pdf', size: '4.2 MB', type: 'pdf', date: '2026-03-20', category: 'Assets' },
-    { id: 2, name: 'Landing_Mockup_Final.fig', size: '12.8 MB', type: 'figma', date: '2026-03-18', category: 'Design' },
-    { id: 3, name: 'Contract_Signed_Alpha.pdf', size: '1.5 MB', type: 'pdf', date: '2026-03-15', category: 'Legal' },
-    { id: 4, name: 'Logo_Pack_Dark.zip', size: '24.1 MB', type: 'zip', date: '2026-03-10', category: 'Assets' },
-    { id: 5, name: 'Database_Schema.png', size: '0.8 MB', type: 'image', date: '2026-03-21', category: 'Dev' },
-    { id: 6, name: 'Sprint_Report_Q1.xlsx', size: '2.4 MB', type: 'excel', date: '2026-03-22', category: 'Reports' }
-  ];
+  const { data: projects, isLoading } = useQuery({
+    queryKey: ['projects-vault'],
+    queryFn: async () => {
+      const res = await projectsAPI.getAll({ limit: 100 });
+      return res.data.data;
+    }
+  });
+
+  const deleteFileMutation = useMutation({
+    mutationFn: ({ projectId, fileId }) => vaultAPI.deleteFile(projectId, fileId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects-vault']);
+      toast.success('File removed from vault');
+    }
+  });
+
+  if (isLoading) return <LoadingScreen />;
+
+  // Flatten all files across projects or filter by selected
+  const allFiles = projects?.reduce((acc, p) => {
+    if (selectedProject !== 'all' && p._id !== selectedProject) return acc;
+    const projectFiles = p.files.map(f => ({ ...f, projectId: p._id, projectName: p.title }));
+    return [...acc, ...projectFiles];
+  }, []) || [];
+
+  const filteredFiles = allFiles.filter(f => {
+    if (categoryFilter !== 'all' && f.category !== categoryFilter) return false;
+    // Clients only see files with visibility 'client'
+    if (!isAdmin && f.visibility !== 'client') return false;
+    return true;
+  });
 
   const handleUpload = () => {
-    setIsUploading(true);
-    setTimeout(() => {
-      setIsUploading(false);
-      toast.success('Files uploaded successfully to the OS Vault!');
-    }, 2000);
+    if (selectedProject === 'all') return toast.error('Select a specific project first');
+    const name = prompt('File Name:');
+    const url = prompt('Cloudinary/File URL:');
+    const category = prompt('Category (assets/documents/source-code/invoices):', 'documents');
+    
+    if (name && url) {
+      setIsUploading(true);
+      vaultAPI.addFile(selectedProject, { name, url, category, type: 'link', size: 0 }).then(() => {
+        toast.success('File added to vault!');
+        queryClient.invalidateQueries(['projects-vault']);
+      }).finally(() => setIsUploading(false));
+    }
   };
 
   return (
@@ -66,11 +98,11 @@ export default function Drive() {
                   <Shield size={16} />
                </div>
             </div>
-            <h3 className="text-3xl font-black text-white font-display uppercase tracking-tighter mb-4">42.8 <span className="text-lg text-gray-500">GB</span></h3>
+            <h3 className="text-3xl font-black text-white font-display uppercase tracking-tighter mb-4">{Math.round(allFiles.reduce((acc, f) => acc + (f.size || 0), 0) / 1024 / 1024) || 0} <span className="text-lg text-gray-500">MB</span></h3>
             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-               <div className="h-full bg-blue-500 w-[42%] shadow-glow-blue" />
+               <div className="h-full bg-blue-500 w-[15%] shadow-glow-blue" />
             </div>
-            <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest mt-4">Standard Encryption Active</ p>
+            <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest mt-4">Standard Encryption Active</p>
          </div>
          <div className="glass-card p-8 border-white/5 bg-white/[0.01]">
             <p className="text-[10px] font-black uppercase tracking-widest text-[#6b7280] mb-8">Asset Breakdown</p>
@@ -107,58 +139,103 @@ export default function Drive() {
                />
             </div>
             <div className="flex gap-4">
-               <button className="btn-os flex items-center gap-2 h-12 text-[10px] px-6"><Filter size={14} /> Category</button>
-               <button className="btn-os flex items-center gap-2 h-12 text-[10px] px-6"><Clock size={14} /> Newest First</button>
+               <select 
+                 value={selectedProject}
+                 onChange={(e) => setSelectedProject(e.target.value)}
+                 className="bg-white/5 border border-white/5 rounded-2xl h-12 px-6 text-[10px] font-black uppercase tracking-widest text-white outline-none"
+               >
+                 <option value="all" className="bg-[#111]">All Projects</option>
+                 {projects?.map(p => <option key={p._id} value={p._id} className="bg-[#111]">{p.title}</option>)}
+               </select>
+               <select 
+                 value={categoryFilter}
+                 onChange={(e) => setCategoryFilter(e.target.value)}
+                 className="bg-white/5 border border-white/5 rounded-2xl h-12 px-6 text-[10px] font-black uppercase tracking-widest text-white outline-none"
+               >
+                 <option value="all" className="bg-[#111]">Category</option>
+                 {['assets', 'documents', 'source-code', 'invoices', 'other'].map(c => <option key={c} value={c} className="bg-[#111]">{c}</option>)}
+               </select>
             </div>
          </div>
 
          {view === 'grid' ? (
            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-              {mockFiles.map(file => (
+               {filteredFiles.map(file => (
                 <motion.div 
-                  key={file.id}
+                  key={file._id}
                   whileHover={{ y: -5 }}
                   className="glass-card p-6 border-white/5 bg-white/[0.02] hover:bg-white/[0.05] group transition-all"
                 >
                    <div className="flex justify-between items-start mb-6">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        file.type === 'pdf' ? 'bg-red-500/10 text-red-500' :
-                        file.type === 'figma' ? 'bg-purple-500/10 text-purple-500' :
-                        file.type === 'image' ? 'bg-cyan-500/10 text-cyan-500' :
+                        file.name?.endsWith('.pdf') ? 'bg-red-500/10 text-red-500' :
+                        file.category === 'assets' ? 'bg-cyan-500/10 text-cyan-500' :
                         'bg-blue-500/10 text-blue-500'
                       }`}>
-                         {file.type === 'image' ? <ImageIcon size={20} /> : <FileText size={20} />}
+                         {file.name?.match(/\.(jpg|jpeg|png|gif|svg)$/i) ? <ImageIcon size={20} /> : <FileText size={20} />}
                       </div>
                       <button className="text-gray-700 hover:text-white transition-colors opacity-0 group-hover:opacity-100"><MoreVertical size={16} /></button>
                    </div>
                    <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1 truncate">{file.name}</h4>
-                   <p className="text-[8px] text-gray-600 font-bold uppercase tracking-[0.2em]">{file.size} • {file.category}</p>
+                   <p className="text-[8px] text-gray-600 font-bold uppercase tracking-[0.2em]">{file.category} • {file.projectName}</p>
                    
                    <div className="flex gap-2 mt-6 pt-6 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="flex-1 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center hover:bg-blue-500/20 transition-all"><Download size={14} /></button>
-                      <button className="h-8 w-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500/20 transition-all"><Trash2 size={14} /></button>
+                      <a 
+                        href={file.url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="flex-1 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center hover:bg-blue-500/20 transition-all"
+                      >
+                        <Download size={14} />
+                      </a>
+                      {isAdmin && (
+                        <button 
+                          onClick={() => {
+                            if (confirm('Delete this file?')) deleteFileMutation.mutate({ projectId: file.projectId, fileId: file._id });
+                          }}
+                          className="h-8 w-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500/20 transition-all"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                    </div>
                 </motion.div>
               ))}
            </div>
          ) : (
            <div className="space-y-4">
-              {mockFiles.map(file => (
-                <div key={file.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.04] transition-colors group">
+               {filteredFiles.map(file => (
+                <div key={file._id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.04] transition-colors group">
                    <div className="flex items-center gap-6">
                       <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-white transition-colors">
                          <File size={18} />
                       </div>
                       <div>
                          <h4 className="text-sm font-bold text-white uppercase tracking-widest">{file.name}</h4>
-                         <p className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em]">{file.category} • {file.date}</p>
+                         <p className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em]">{file.category} • {file.projectName} • {new Date(file.uploadedAt).toLocaleDateString()}</p>
                       </div>
                    </div>
                    <div className="flex items-center gap-8">
-                      <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{file.size}</span>
+                      <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{Math.round(file.size / 1024 / 1024) || 0} MB</span>
                       <div className="flex gap-2">
-                        <button className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-white transition-all"><Download size={16} /></button>
-                        <button className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-red-500 transition-all"><Trash2 size={16} /></button>
+                        <a 
+                          href={file.url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-white transition-all"
+                        >
+                          <Download size={16} />
+                        </a>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => {
+                              if (confirm('Delete this file?')) deleteFileMutation.mutate({ projectId: file.projectId, fileId: file._id });
+                            }}
+                            className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-red-500 transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                    </div>
                 </div>

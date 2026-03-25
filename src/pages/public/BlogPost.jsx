@@ -77,22 +77,22 @@ export default function BlogPost() {
         </script>
       </Helmet>
 
-      <div className="pt-24 pb-20 bg-[#0a0a0f] text-white">
+      <div className=" bg-[#0a0a0f] text-white">
 
         {/* HEADER */}
-        <header className="relative py-24 overflow-hidden border-b border-white/5">
+        <header className="relative py-20 overflow-hidden border-b border-white/5">
           <div className="max-w-7xl mx-auto px-4">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex gap-3 mb-6">
+              <div className="flex gap-3">
                 <span className="badge badge-blue">{post.category}</span>
                 <span className="badge badge-green">{post.readTime} MIN READ</span>
               </div>
 
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-10 leading-tight">
+              <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold mb-2 leading-tight">
                 {post.title}
               </h1>
 
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-t pt-10 gap-4 md:gap-0">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-t pt-2 gap-4 md:gap-0">
                 <div>
                   <h4 className="text-white font-bold">The Stack Guy Team</h4>
                   <p className="text-xs text-gray-400 mt-1">Published {formattedDate}</p>
@@ -109,8 +109,8 @@ export default function BlogPost() {
         </header>
 
         {/* FEATURED IMAGE */}
-        <section className="container-custom -mt-32 mb-20 max-w-6xl mx-auto px-4">
-          <motion.div className="relative h-[400px] md:h-[600px] rounded-[40px] overflow-hidden shadow-lg">
+        <section className="mb-20 mx-auto px-4 mt-2">
+          <motion.div className="relative h-[250px] md:h-[500px] rounded-[40px] overflow-hidden shadow-lg">
             <img
               src={post.featuredImage}
               alt={post.title}
@@ -118,16 +118,16 @@ export default function BlogPost() {
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover"
             />
-          </motion.div>
+          </motion.div> 
         </section>
 
         {/* MAIN CONTENT */}
-        <div className="container-custom max-w-7xl mx-auto px-4">
+        <div className="container-custom mx-auto px-4 py-2">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
 
             {/* BLOG CONTENT */}
             <main className="lg:col-span-8">
-              <div className="max-w-none space-y-6 text-white">
+              <div className="space-y-6 text-white">
 
                 <div
                   className="blog-content"

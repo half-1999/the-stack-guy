@@ -175,7 +175,7 @@ export default function Blog() {
                       {post.excerpt}
                     </p>
 
-                    <Link to={`/blog/${post.slug}`} className="mt-auto text-blue-500 flex items-center gap-1 group-hover:text-blue-400 transition-colors duration-300">
+                    <Link to={`/blog/${post.slug}`} className="mt-auto text-blue-500 flex items-center gap-1 group-hover:text-blue-400 transition-colors duration-300 bg-white/5 p-2 rounded-full justify-center">
                       <ArrowRight size={18} />
                     </Link>
                   </div>

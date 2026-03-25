@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, CreditCard, Download, ExternalLink, 
   Search, Filter, ChevronRight, Clock, CheckCircle, 
-  AlertCircle, MoreHorizontal, FileText, IndianRupee, Printer, Settings
+  AlertCircle, MoreHorizontal, FileText, IndianRupee, Printer, Settings,
+  Trash2
 } from 'lucide-react';
 import { useAuthStore } from '../../store';
 import { invoicesAPI } from '../../services/api';
+import toast from 'react-hot-toast';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
 export default function Invoices() {
@@ -48,9 +50,10 @@ export default function Invoices() {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'paid': return 'text-green-500 bg-green-500/10 border-green-500/20';
-      case 'overdue': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      case 'sent': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+      case 'paid': return 'text-green-500 bg-green-500/10 border-green-500/20 shadow-glow-green/5';
+      case 'partially-paid': return 'text-orange-500 bg-orange-500/10 border-orange-500/20 shadow-glow-orange/5';
+      case 'overdue': return 'text-red-500 bg-red-500/10 border-red-500/20 shadow-glow-red/5';
+      case 'sent': return 'text-blue-500 bg-blue-500/10 border-blue-500/20 shadow-glow-blue/5';
       default: return 'text-[#6b7280] bg-white/5 border-white/5';
     }
   };
@@ -102,7 +105,7 @@ export default function Invoices() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            <div className="glass-card p-8 bg-gradient-to-br from-green-600/5 to-transparent border-green-500/10">
               <p className="text-[10px] text-[#6b7280] font-black uppercase tracking-widest mb-2">Total Amount Received</p>
-              <h3 className="text-4xl font-black text-[#39ff14] font-display">₹{invoices?.reduce((acc, inv) => inv.status === 'paid' ? acc + inv.total : acc, 0).toLocaleString('en-IN') || 0}</h3>
+              <h3 className="text-4xl font-black text-[#39ff14] font-display">₹{invoices?.reduce((acc, inv) => acc + (inv.paidAmount || 0), 0).toLocaleString('en-IN') || 0}</h3>
               <div className="mt-4 flex gap-2 items-center text-[8px] text-[#6b7280] font-black uppercase tracking-wider">
                  <CheckCircle size={10} className="text-green-500" /> GST Ready
                  <ChevronRight size={10} />
@@ -110,7 +113,7 @@ export default function Invoices() {
            </div>
            <div className="glass-card p-8 bg-gradient-to-br from-red-600/5 to-transparent border-red-500/10">
               <p className="text-[10px] text-[#6b7280] font-black uppercase tracking-widest mb-2">Pending Payments</p>
-              <h3 className="text-4xl font-black text-red-500 font-display">₹{invoices?.reduce((acc, inv) => (inv.status === 'sent' || inv.status === 'overdue') ? acc + inv.total : acc, 0).toLocaleString('en-IN') || 0}</h3>
+              <h3 className="text-4xl font-black text-red-500 font-display">₹{invoices?.reduce((acc, inv) => (inv.status !== 'paid' && inv.status !== 'cancelled') ? acc + (inv.total - (inv.paidAmount || 0)) : acc, 0).toLocaleString('en-IN') || 0}</h3>
               <div className="mt-4 flex gap-2 items-center text-[8px] text-[#6b7280] font-black uppercase tracking-wider">
                  <Clock size={10} className="text-red-500" /> Tracking Overdue
               </div>
@@ -133,7 +136,7 @@ export default function Invoices() {
               <tr>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#6b7280]">Invoice ID</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#6b7280]">Client / Project</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#6b7280]">Amount</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#6b7280]">Remaining Amount</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#6b7280]">Due Date</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#6b7280]">Status</th>
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-[#6b7280]">Quick Actions</th>
@@ -157,8 +160,13 @@ export default function Invoices() {
                     <p className="text-sm font-bold text-white">{inv?.project?.title || "Manual Invoice"}</p>
                     <p className="text-[10px] text-[#6b7280] font-black uppercase tracking-widest italic">{inv?.client?.name || "Private Client"}</p>
                   </td>
-                  <td className="px-8 py-8 text-xl font-black text-white font-display">
-                    ₹{inv.total.toLocaleString('en-IN')}
+                  <td className="px-8 py-8">
+                    <div className="flex flex-col">
+                      <p className="text-xl font-black text-white font-display">₹{(inv.total - (inv.paidAmount || 0)).toLocaleString('en-IN')}</p>
+                      <p className="text-[9px] text-[#6b7280] font-black uppercase tracking-widest">
+                        {inv.paidAmount > 0 ? `Paid: ₹${inv.paidAmount.toLocaleString('en-IN')} of ₹${inv.total.toLocaleString('en-IN')}` : `Total: ₹${inv.total.toLocaleString('en-IN')}`}
+                      </p>
+                    </div>
                   </td>
                   <td className="px-8 py-8">
                     <div className="flex flex-col gap-1">
@@ -177,11 +185,40 @@ export default function Invoices() {
                       {inv.status !== 'paid' && !isAdmin && (
                         <button className="btn-primary h-10 text-[xs] font-black uppercase px-6 no-underline shadow-glow-blue/20">PAY NOW</button>
                       )}
+                      {isAdmin && inv.status !== 'paid' && (
+                        <button 
+                          title="Record Payment"
+                          onClick={() => {
+                            const amount = parseFloat(prompt('Amount Paid:'));
+                            const method = prompt('Payment Method (bank/upi/cash):', 'bank');
+                            const ref = prompt('Transaction ID / Ref:');
+                            if (amount && method) {
+                              invoicesAPI.addPayment(inv._id, { amount, method, transactionId: ref }).then(() => {
+                                toast.success('Payment recorded!');
+                                queryClient.invalidateQueries(['invoices']);
+                              }).catch(err => toast.error('Failed to record payment'));
+                            }
+                          }}
+                          className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-[#39ff14] transition-all"
+                        >
+                          <IndianRupee size={16} />
+                        </button>
+                      )}
                       <button className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-white hover:bg-white/10 transition-all">
                         <Download size={16} />
                       </button>
-                      <button className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-white hover:bg-white/10 transition-all">
-                        <MoreHorizontal size={16} />
+                      <button 
+                        onClick={() => {
+                          if (confirm('Delete this invoice?')) {
+                            invoicesAPI.delete(inv._id).then(() => {
+                              toast.success('Invoice deleted');
+                              queryClient.invalidateQueries(['invoices']);
+                            });
+                          }
+                        }}
+                        className="h-10 w-10 rounded-xl bg-white/2 border border-white/5 flex items-center justify-center text-[#9ca3af] hover:text-red-500 transition-all"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>

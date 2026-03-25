@@ -4,9 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, UserPlus, Zap, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldCheck, Phone, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Zap, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldCheck, Phone, CheckCircle, Sparkles, Briefcase, CreditCard, Globe } from 'lucide-react';
 import { useAuthStore } from '../../store';
 import { authAPI } from '../../services/api';
+import { Helmet } from 'react-helmet-async';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -51,62 +52,30 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center pt-32 pb-32 overflow-hidden relative" style={{ background: 'var(--color-bg-primary)' }}>
+    <>
+    <Helmet>
+        <title>Sign Up | The Stack Guy – Start Your Project Today</title>
+
+        <meta
+          name="description"
+          content="Create your account with The Stack Guy and start building high-performance MERN stack applications. Fast, scalable, and SEO-ready solutions for your business."
+        />
+    </Helmet>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ background: 'var(--color-bg-primary)' }}>
       {/* Animated Background Orbs */}
       <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-blue-500/10 blur-[200px] -z-10 rounded-full animate-pulse" />
       <div className="absolute bottom-1/4 -left-40 w-[600px] h-[600px] bg-[#39ff14]/5 blur-[200px] -z-10 rounded-full animate-pulse-slow" />
       
       <div className="container-custom relative z-10">
-        <div className="max-w-2xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* Left Side: Pitch */}
           <div className="lg:col-span-5 hidden lg:block">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <div className="w-16 h-16 rounded-2xl bg-[#39ff14]/10 flex items-center justify-center mb-8 border border-[#39ff14]/20 shadow-glow-green/10">
-                <Zap size={32} className="text-[#39ff14]" />
-              </div>
-              <h2 className="text-4xl font-bold text-white mb-6 font-display uppercase tracking-widest leading-tight">Join the <span className="gradient-text">Future</span> of Freelancing</h2>
-              <ul className="space-y-6">
-                {[
-                  { title: 'Project Tracking', desc: 'Monitor every milestone in real-time.' },
-                  { title: 'Quick Proposals', desc: 'Get AI-generated project plans in seconds.' },
-                  { title: 'Secure Payments', desc: 'Integrated Razorpay & GST-ready invoicing.' },
-                  { title: 'Direct Chat', desc: 'Communication without friction.' }
-                ].map(item => (
-                  <li key={item.title} className="flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 mt-1">
-                      <CheckCircle size={16} />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-bold text-sm mb-1">{item.title}</h4>
-                      <p className="text-[#9ca3af] text-xs leading-relaxed">{item.desc}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              
-              <div className="mt-12 pt-10 border-t border-white/5">
-                <p className="text-[#6b7280] text-xs font-bold uppercase tracking-widest mb-6">Trusted by 50+ Entrepreneurs</p>
-                <div className="flex -space-x-4">
-                  {[1,2,3,4,5].map(i => <img key={i} src={`https://i.pravatar.cc/150?u=reg${i}`} alt="user" className="w-10 h-10 rounded-full border-2 border-[#0a0a0f]" />)}
-                </div>
-              </div>
-            </motion.div>
-          </div>
 
-          {/* Right Side: Form Card */}
-          <div className="lg:col-span-7">
-            <Link to="/" className="inline-flex lg:hidden items-center gap-2 text-[#6b7280] hover:text-white transition-colors mb-8 no-underline text-xs font-black uppercase tracking-widest group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back
-            </Link>
-
-            <motion.div 
+             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-card p-10 md:p-12 rounded-[40px] border-white/5 border-2 shadow-glow-blue/5"
+              className="glass-card p-10 md:p-5 rounded-[40px] border-white/5 border-2 shadow-glow-blue/5"
             >
               <div className="mb-10 lg:text-left text-center">
                 <h1 className="text-3xl font-bold text-white mb-2 font-display uppercase tracking-wider">Create Account</h1>
@@ -238,13 +207,77 @@ export default function Register() {
                 </p>
               </div>
               
-              <div className="mt-10 pt-10 border-t border-white/5 flex items-center justify-center gap-3 text-[#6b7280] text-[10px] font-bold uppercase tracking-widest opacity-50">
-                <ShieldCheck size={14} /> Encrypted Session
-              </div>
+             
+            </motion.div>
+          </div>
+
+          {/* Right Side: Form Card */}
+          <div className="lg:col-span-7">
+           <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+
+              <h2 className="text-4xl font-bold text-white mb-6 font-display uppercase tracking-widest leading-tight">
+              Turn Skills into <span className="gradient-text">Income</span> 💸
+            </h2>
+
+            <p className="text-gray-400 text-sm mb-8">
+              Everything you need to start, grow, and scale your freelance business — in one place.
+            </p>
+
+            <ul className="space-y-6">
+              {[
+                {
+                  icon: <Sparkles size={16} />,
+                  title: 'AI-Powered Proposals',
+                  desc: 'Create winning proposals in seconds.'
+                },
+                {
+                  icon: <Briefcase size={16} />,
+                  title: 'All-in-One Workspace',
+                  desc: 'Manage projects, clients & files effortlessly.'
+                },
+                {
+                  icon: <CreditCard size={16} />,
+                  title: 'Get Paid Seamlessly',
+                  desc: 'Razorpay integration with GST-ready invoices.'
+                },
+                {
+                  icon: <Globe size={16} />,
+                  title: 'Work Without Limits',
+                  desc: 'Build your freelance business from anywhere.'
+                }
+              ].map(item => (
+                <li key={item.title} className="flex gap-4 group">
+                  <div className="w-8 h-8 rounded-lg bg-[#39ff14]/10 flex items-center justify-center text-[#39ff14] shrink-0 mt-1 group-hover:bg-[#39ff14]/20 transition">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold text-sm mb-1">
+                      {item.title}
+                    </h4>
+                    <p className="text-[#9ca3af] text-xs leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-12 pt-10 border-t border-white/5">
+              <p className="text-[#6b7280] text-xs font-bold uppercase tracking-widest mb-4">
+                🚀 Join the new wave
+              </p>
+              <p className="text-gray-400 text-sm">
+                50+ freelancers already building smarter businesses.
+              </p>
+            </div>
             </motion.div>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
