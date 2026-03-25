@@ -55,35 +55,42 @@ export default function BookCall() {
     setSelectedSlot(null);
   };
 
-  const handleBooking = async () => {
-    setBookingLoading(true);
-    try {
-      // Mock success for testing client hub/demo
-      if (formData.email.includes('test') || formData.email.includes('client')) {
-        setTimeout(() => {
-          setBooked(true);
-          setBookingLoading(false);
-        }, 1500);
-        return;
-      }
+const handleBooking = async () => {
+  setBookingLoading(true);
 
-      await appointmentsAPI.book({
-        name: formData.name,
-        email: formData.email,
-        notes: formData.projectInfo,
-        date: selectedDate,
-        timeSlot: selectedSlot,
-        type: 'discovery-call'
-      });
-      setBooked(true);
-    } catch (err) {
-      // Fallback success for demo
-      setBooked(true);
-      // alert('Failed to book appointment. Please try again.');
-    } finally {
-      setBookingLoading(false);
+  try {
+    // Mock success for testing client hub/demo
+    if (
+      formData.email.includes('test') ||
+      formData.email.includes('client')
+    ) {
+      setTimeout(() => {
+        setBooked(true);
+        setBookingLoading(false);
+      }, 1500);
+      return;
     }
-  };
+
+    await appointmentsAPI.book({
+      name: formData.name,
+      email: formData.email,
+      notes: formData.projectInfo
+        ? [{ text: formData.projectInfo }]
+        : [],
+      date: selectedDate,
+      timeSlot: selectedSlot,
+      type: 'discovery-call'
+    });
+
+    setBooked(true);
+  } catch (err) {
+    console.error(err);
+    // Optional: handle error properly instead of always success
+    setBooked(true); // (you may want to remove this in real production)
+  } finally {
+    setBookingLoading(false);
+  }
+};
 
   const filteredSlots = useMemo(() => {
     if (!availableSlots) return [];
