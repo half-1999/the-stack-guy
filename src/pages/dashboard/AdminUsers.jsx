@@ -192,7 +192,7 @@ export default function AdminUsers() {
           </div>
           <div>
             <h4 className="text-xl font-bold text-white mb-2 uppercase tracking-widest leading-none">New Global Partners</h4>
-            <p className="text-sm font-medium text-[#9ca3af] italic max-w-md">
+            <p className="text-sm font-medium text-[#9ca3af] italic">
               Our system has successfully auto-onboarded {users?.filter(u => u.role === 'client').length || 0} clients across Tier-2 cities in the last 30 days.
             </p>
           </div>

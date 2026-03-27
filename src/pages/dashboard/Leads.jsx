@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -6,10 +6,10 @@ import {
   Search, Filter, MoreHorizontal, 
   Trash2, Zap, MessageSquare, 
   CheckCircle, AlertCircle, TrendingUp,
-  Calendar
+  Calendar, X, Clock
 } from 'lucide-react';
 import { useAuthStore } from '../../store';
-import { leadsAPI, aiAPI } from '../../services/api';
+import { leadsAPI, aiAPI, appointmentsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
@@ -17,6 +17,7 @@ const leadStatuses = [
   { id: 'new', label: 'New Lead', color: 'text-blue-500' },
   { id: 'contacted', label: 'Contacted', color: 'text-cyan-500' },
   { id: 'qualified', label: 'Qualified', color: 'text-[#39ff14]' },
+  { id: 'converted', label: 'Converted', color: 'text-purple-500' },
   { id: 'lost', label: 'Lost', color: 'text-red-500' }
 ];
 
@@ -26,7 +27,16 @@ export default function Leads() {
   const queryClient = useQueryClient();
   const [activeStatus, setActiveStatus] = useState('all');
   const [analysis, setAnalysis] = useState(null);
+  const [activeLead, setActiveLead] = useState(null); // Used for mapping Execute Roadmap dynamically
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Modals Data
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [meetingModal, setMeetingModal] = useState(null);
+  const [meetingDate, setMeetingDate] = useState('');
+  const [meetingTime, setMeetingTime] = useState('');
+  const [meetingSlots, setMeetingSlots] = useState([]);
+  const [isSlotLoading, setIsSlotLoading] = useState(false);
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ['leads'],
@@ -40,10 +50,11 @@ export default function Leads() {
     }
   });
 
-  const handleAIAnalyze = async (id) => {
+  const handleAIAnalyze = async (lead) => {
     setIsAnalyzing(true);
+    setActiveLead(lead);
     try {
-      const resp = await aiAPI.analyzeLead(id);
+      const resp = await aiAPI.analyzeLead(lead._id);
       setAnalysis(resp.data.data);
       toast.success('Neural Strategy Audit Complete.');
     } catch (err) {
@@ -69,6 +80,36 @@ export default function Leads() {
     }
   });
 
+  const meetingMutation = useMutation({
+    mutationFn: (data) => leadsAPI.scheduleMeeting(meetingModal._id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['leads']);
+      toast.success('Meeting systematically scheduled.');
+      setMeetingModal(null);
+      setMeetingDate('');
+      setMeetingTime('');
+    }
+  });
+
+  useEffect(() => {
+    if (meetingDate && meetingModal) {
+      setIsSlotLoading(true);
+      appointmentsAPI.getSlots(meetingDate)
+        .then(res => setMeetingSlots(res.data.data))
+        .catch(() => toast.error('Failed to fetch slots'))
+        .finally(() => setIsSlotLoading(false));
+    }
+  }, [meetingDate, meetingModal]);
+
+  const handleExecuteRoadmap = () => {
+    toast.success('Neural Roadmap Execution initializing! Converting Lead Pipeline...');
+    if (activeLead?._id) {
+       updateStatusMutation.mutate({ id: activeLead._id, status: 'qualified', executeRoadmap: true });
+    }
+    setAnalysis(null);
+    setActiveLead(null);
+  };
+
   if (!isAdmin) return <div className="p-20 text-center font-black uppercase text-white tracking-[0.3em]">Access Violation: Unauthorized Operator</div>;
   if (isLoading) return <LoadingScreen />;
 
@@ -76,6 +117,17 @@ export default function Leads() {
     if (activeStatus === 'all') return true;
     return l.status === activeStatus;
   }) || [];
+
+  const getCardStyle = (status) => {
+    switch (status) {
+      case 'new': return 'bg-blue-900/10 border-blue-500/20 hover:border-blue-500/40';
+      case 'contacted': return 'bg-cyan-900/10 border-cyan-500/20 hover:border-cyan-500/40';
+      case 'qualified': return 'bg-green-900/10 border-[#39ff14]/30 hover:border-[#39ff14]/50 shadow-[0_0_15px_rgba(57,255,20,0.05)]';
+      case 'lost': return 'bg-red-900/10 border-red-500/20 hover:border-red-500/40 opacity-70';
+      case 'converted': return 'bg-purple-900/10 border-purple-500/30 hover:border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.1)]';
+      default: return 'bg-white/[0.01] border-white/5';
+    }
+  };
 
   return (
     <div className="space-y-10 pb-20">
@@ -91,17 +143,17 @@ export default function Leads() {
         </div>
         
         <div className="flex flex-wrap gap-4">
-          <div className="flex rounded-xl bg-white/5 border border-white/5 p-1 overflow-hidden">
-             {['all', 'new', 'contacted', 'qualified'].map((s) => (
-                <button 
-                  key={s}
-                  onClick={() => setActiveStatus(s)}
-                  className={`px-6 h-10 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest ${activeStatus === s ? 'bg-blue-600 text-white shadow-glow-blue/20' : 'text-[#6b7280] hover:text-white'}`}
-                >
-                   {s}
-                </button>
-             ))}
-          </div>
+           <div className="flex rounded-xl bg-white/5 border border-white/5 p-1 overflow-hidden">
+              {['all', 'new', 'contacted', 'qualified', 'converted', 'lost'].map((s) => (
+                 <button 
+                   key={s}
+                   onClick={() => setActiveStatus(s)}
+                   className={`px-6 h-10 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest ${activeStatus === s ? 'bg-blue-600 text-white shadow-glow-blue/20' : 'text-[#6b7280] hover:text-white'}`}
+                 >
+                    {s}
+                 </button>
+              ))}
+           </div>
           <button className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all">
              <Filter size={18} />
           </button>
@@ -109,10 +161,11 @@ export default function Leads() {
       </div>
 
       {/* Pipeline Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
          <StatsBox label="Total Incoming" val={leads?.length || 0} color="blue" />
          <StatsBox label="Qualified" val={leads?.filter(l => l.status === 'qualified').length || 0} color="green" />
-         <StatsBox label="Conversion Rate" val={`${Math.round(((leads?.filter(l => l.status === 'qualified').length || 0) / (leads?.length || 1)) * 100)}%`} color="cyan" />
+         <StatsBox label="Converted" val={leads?.filter(l => l.status === 'converted').length || 0} color="purple" />
+         <StatsBox label="Conversion Rate" val={`${Math.round(((leads?.filter(l => l.status === 'qualified' || l.status === 'converted').length || 0) / (leads?.length || 1)) * 100)}%`} color="cyan" />
          <StatsBox label="Est. Pipeline Value" val={`₹${(leads?.length || 0) * 15000}`} color="orange" />
       </div>
 
@@ -123,12 +176,12 @@ export default function Leads() {
             key={lead._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-10 relative overflow-hidden group hover:translate-y-[-8px] border-2 transition-all border-white/5 bg-white/[0.01]"
+            className={`glass-card p-10 relative overflow-hidden group hover:translate-y-[-8px] border-2 transition-all ${getCardStyle(lead.status)}`}
           >
              {/* Lead Scoring Badge */}
              <div className="absolute top-0 right-0 p-4">
-                <div className={`w-12 h-12 rounded-bl-3xl border-l-[3px] border-b-[3px] flex flex-col items-center justify-center ${lead.score > 70 ? 'border-green-500/30' : 'border-blue-500/20'}`}>
-                   <span className={`text-lg font-black font-display leading-none ${lead.score > 70 ? 'text-green-500' : 'text-blue-500'}`}>{lead.score}</span>
+                <div className={`w-12 h-12 rounded-bl-3xl border-l-[3px] border-b-[3px] flex flex-col items-center justify-center ${(lead.score || 0) > 70 ? 'border-green-500/30' : 'border-blue-500/20'}`}>
+                   <span className={`text-lg font-black font-display leading-none ${(lead.score || 0) > 70 ? 'text-green-500' : 'text-blue-500'}`}>{lead.score || 0}</span>
                    <span className="text-[6px] font-black uppercase tracking-widest opacity-60">SCORE</span>
                 </div>
              </div>
@@ -170,30 +223,23 @@ export default function Leads() {
                    <button 
                      title="Neural Audit"
                      disabled={isAnalyzing}
-                     onClick={() => handleAIAnalyze(lead._id)}
-                     className={`h-10 w-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 hover:bg-blue-600/20 transition-all ${isAnalyzing ? 'animate-pulse' : ''}`}
+                     onClick={() => handleAIAnalyze(lead)}
+                     className={`h-10 w-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-500 hover:bg-blue-600/20 transition-all ${isAnalyzing && activeLead?._id === lead._id ? 'animate-pulse' : ''}`}
                    >
                       <Zap size={16} />
                    </button>
                    <button 
                      onClick={() => {
-                        const date = prompt('Enter meeting date (YYYY-MM-DD):');
-                        const time = prompt('Enter meeting time (HH:MM):');
-                        if (date && time) {
-                          leadsAPI.scheduleMeeting(lead._id, { date, time }).then(() => {
-                            toast.success('Meeting scheduled!');
-                            queryClient.invalidateQueries(['leads']);
-                          }).catch(err => toast.error('Failed to schedule meeting'));
-                        }
+                        setMeetingModal(lead);
+                        setMeetingDate('');
+                        setMeetingTime('');
                      }}
                      className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-green-500 transition-all"
                    >
                       <Calendar size={16} />
                    </button>
                    <button 
-                     onClick={() => {
-                       if(confirm('Purge this lead from memory?')) deleteMutation.mutate(lead._id);
-                     }}
+                     onClick={() => setDeleteModal(lead._id)}
                      className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-red-500 transition-all"
                    >
                       <Trash2 size={16} />
@@ -276,13 +322,79 @@ export default function Leads() {
                            </ul>
                         </div>
                         <div className="p-8 rounded-[32px] bg-green-500/5 border border-green-500/10 flex items-center justify-center">
-                           <button className="btn-primary w-full py-4 text-[10px] font-black uppercase tracking-widest">Execute Roadmap</button>
+                           <button onClick={handleExecuteRoadmap} className="btn-primary w-full py-4 text-[10px] font-black uppercase tracking-widest">Execute Roadmap</button>
                         </div>
                      </div>
                   </div>
                </motion.div>
             </div>
          )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setDeleteModal(null)} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-[#0a0a0f] border border-white/10 p-8 rounded-3xl max-w-sm w-full text-center">
+               <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-6">
+                 <AlertCircle size={32} />
+               </div>
+               <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Initialize Purge Protocol?</h3>
+               <p className="text-xs text-gray-500 font-bold mb-8">This action permanently deletes the lead from the database. It cannot be reversed.</p>
+               <div className="flex gap-4">
+                 <button onClick={() => setDeleteModal(null)} className="flex-1 py-3 rounded-xl border border-white/10 text-white text-xs font-black uppercase hover:bg-white/5">Cancel</button>
+                 <button onClick={() => { deleteMutation.mutate(deleteModal); setDeleteModal(null); }} className="flex-1 py-3 rounded-xl bg-red-600 text-white text-xs font-black uppercase hover:bg-red-700 shadow-glow-red">Purge Lead</button>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Meeting Booking Modal */}
+      <AnimatePresence>
+        {meetingModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setMeetingModal(null)} />
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative bg-[#0a0a0f] border border-white/10 p-8 rounded-[32px] max-w-2xl w-full">
+               <button onClick={() => setMeetingModal(null)} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X size={20} /></button>
+               <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-1">Schedule Meeting</h3>
+               <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-8">Booking for: {meetingModal.name}</p>
+               
+               <div className="space-y-6">
+                 <div>
+                   <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2 block">1. Select Date</label>
+                   <input type="date" min={new Date().toISOString().split('T')[0]} value={meetingDate} onChange={e => { setMeetingDate(e.target.value); setMeetingTime(''); }} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-blue-500 outline-none" />
+                 </div>
+
+                 {meetingDate && (
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                     <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2 flex items-center gap-2">2. Available Slots {isSlotLoading && <span className="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full"/>}</label>
+                     <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                       {meetingSlots.length === 0 && !isSlotLoading ? (
+                         <div className="col-span-3 text-center text-xs text-red-500 font-bold p-4 bg-red-500/10 rounded-xl">No slots available</div>
+                       ) : (
+                         meetingSlots.map(slot => (
+                           <button key={slot} onClick={() => setMeetingTime(slot)} className={`p-3 text-xs font-black rounded-xl border transition-all ${meetingTime === slot ? 'bg-blue-600 text-white border-blue-500 shadow-glow-blue' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:border-white/20'}`}>
+                             {slot}
+                           </button>
+                         ))
+                       )}
+                     </div>
+                   </motion.div>
+                 )}
+
+                 <button 
+                    disabled={!meetingDate || !meetingTime || meetingMutation.isPending} 
+                    onClick={() => meetingMutation.mutate({ date: meetingDate, time: meetingTime })}
+                    className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${meetingDate && meetingTime ? 'bg-blue-600 shadow-glow-blue text-white hover:bg-blue-500' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}
+                 >
+                   {meetingMutation.isPending ? 'Scheduling...' : 'Confirm Booking'}
+                 </button>
+               </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
@@ -294,7 +406,8 @@ function StatsBox(props) {
       blue: 'text-blue-500 bg-blue-500/5 border-blue-500/10',
       green: 'text-green-500 bg-green-500/5 border-green-500/10',
       cyan: 'text-cyan-500 bg-cyan-500/5 border-cyan-500/10',
-      orange: 'text-orange-500 bg-orange-500/5 border-orange-500/10'
+      orange: 'text-orange-500 bg-orange-500/5 border-orange-500/10',
+      purple: 'text-purple-500 bg-purple-500/5 border-purple-500/10'
    };
    
    return (

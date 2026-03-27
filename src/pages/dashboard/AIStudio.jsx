@@ -3,10 +3,10 @@ import { useMutation } from '@tanstack/react-query';
 import { 
   Sparkles, Terminal, Palette, Wand2, Zap, Brain, Rocket, 
   ChevronRight, Send, Loader2, RefreshCcw, FileText, CheckCircle2,
-  AlertCircle, MessageSquare, Terminal as TerminalIcon
+  AlertCircle, MessageSquare, Terminal as TerminalIcon, Edit3, Save, X, Check, User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { aiAPI } from '../../services/api';
+import { aiAPI, blogAPI } from '../../services/api';
 import { toast } from 'react-hot-toast';
 
 export default function AIStudio() {
@@ -22,6 +22,8 @@ export default function AIStudio() {
   const [blogCategory, setBlogCategory] = useState('Web Development');
   const [blogKeywords, setBlogKeywords] = useState('');
   const [generatedBlog, setGeneratedBlog] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedBlog, setEditedBlog] = useState(null);
 
   const chatMutation = useMutation({
     mutationFn: (msgs) => aiAPI.chat(msgs),
@@ -35,10 +37,54 @@ export default function AIStudio() {
     mutationFn: (data) => aiAPI.generateBlog(data),
     onSuccess: (res) => {
       setGeneratedBlog(res.data.data);
+      setEditedBlog(res.data.data);
+      setIsEditing(false);
       toast.success('Blog content generated!');
     },
     onError: () => toast.error('Generation failed.')
   });
+
+  const createBlogMutation = useMutation({
+    mutationFn: (data) => blogAPI.create({ ...data, published: true, publishedAt: new Date() }),
+    onSuccess: () => {
+      toast.success('Blog posted successfully!');
+      setGeneratedBlog(null);
+      setEditedBlog(null);
+      setIsEditing(false);
+      setBlogTitle('');
+      setBlogKeywords('');
+    },
+    onError: () => toast.error('Failed to post blog.')
+  });
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setEditedBlog(generatedBlog);
+    } else {
+      setEditedBlog({ ...generatedBlog });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleSaveEdit = () => {
+    setGeneratedBlog(editedBlog);
+    setIsEditing(false);
+    toast.success('Changes saved!');
+  };
+
+  const handlePostBlog = () => {
+    const blogData = {
+      title: editedBlog?.title || generatedBlog?.title,
+      content: editedBlog?.content || generatedBlog?.content,
+      excerpt: editedBlog?.excerpt || generatedBlog?.excerpt,
+      author: editedBlog?.author || generatedBlog?.author || 'The Stack Guy',
+      category: editedBlog?.category || generatedBlog?.category,
+      tags: editedBlog?.tags || generatedBlog?.tags || [],
+      featuredImage: editedBlog?.featuredImage || generatedBlog?.featuredImage,
+      seoKeywords: editedBlog?.seoKeywords || generatedBlog?.seoKeywords || [],
+    };
+    createBlogMutation.mutate(blogData);
+  };
 
   useEffect(() => {
     chatScrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -193,35 +239,171 @@ export default function AIStudio() {
                 </button>
              </div>
 
-             {/* Output Area */}
-             <div className="flex-1 glass-card border-white/5 bg-white/[0.01] p-12 flex flex-col overflow-hidden relative">
-                {generatedBlog ? (
-                   <div className="overflow-y-auto custom-scrollbar flex-1 space-y-10">
-                      <div className="pb-8 border-b border-white/5">
-                        <div className="flex gap-2 mb-4">
-                           {generatedBlog.tags?.map(t => <span key={t} className="px-3 py-1 bg-blue-500/10 text-blue-500 rounded-full text-[8px] font-black uppercase tracking-widest border border-blue-500/10">#{t}</span>)}
-                        </div>
-                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">{blogTitle}</h2>
-                        <p className="text-sm text-gray-500 italic font-medium">"{generatedBlog.excerpt}"</p>
-                      </div>
-                      
-                      <article className="prose prose-invert prose-sm max-w-none">
-                         <div className="whitespace-pre-wrap text-gray-400 font-medium leading-relaxed">
-                            {generatedBlog.content}
-                         </div>
-                      </article>
+              {/* Output Area */}
+              <div className="flex-1 glass-card border-white/5 bg-white/[0.01] p-12 flex flex-col overflow-hidden relative">
+                 {generatedBlog ? (
+                    <div className="overflow-y-auto custom-scrollbar flex-1 space-y-10">
+                        <div className="pb-8 border-b border-white/5">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex gap-2 flex-wrap">
+                               {(isEditing ? editedBlog?.tags : generatedBlog.tags)?.map((t, i) => (
+                                 isEditing ? (
+                                   <input 
+                                     key={i}
+                                     type="text"
+                                     value={editedBlog?.tags[i] || ''}
+                                     onChange={(e) => {
+                                       const newTags = [...(editedBlog?.tags || [])];
+                                       newTags[i] = e.target.value;
+                                       setEditedBlog({ ...editedBlog, tags: newTags });
+                                     }}
+                                     className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-blue-500 w-24"
+                                     placeholder={`Tag ${i + 1}`}
+                                   />
+                                 ) : (
+                                   <span key={t} className="px-3 py-1 bg-blue-500/10 text-blue-500 rounded-full text-[8px] font-black uppercase tracking-widest border border-blue-500/10">#{t}</span>
+                                 )
+                               ))}
+                            </div>
+                            <button 
+                              onClick={handleEditToggle}
+                              className={`btn-os h-10 px-4 ${isEditing ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}
+                            >
+                              {isEditing ? <><X size={14} /> Cancel</> : <><Edit3 size={14} /> Edit</>}
+                            </button>
+                          </div>
+                         
+                         {isEditing ? (
+                           <input 
+                             type="text"
+                             value={editedBlog?.title || ''}
+                             onChange={(e) => setEditedBlog({ ...editedBlog, title: e.target.value })}
+                             className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-2xl text-white outline-none focus:border-blue-500/50 transition-all font-black uppercase tracking-tighter mb-4"
+                           />
+                         ) : (
+                           <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">{generatedBlog.title}</h2>
+                         )}
+                         
+                          <div className="flex items-center gap-4 mb-3">
+                            <span className="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black uppercase tracking-widest text-gray-500">{isEditing ? editedBlog?.category : generatedBlog.category}</span>
+                            {isEditing && (
+                              <select 
+                                value={editedBlog?.category || ''}
+                                onChange={(e) => setEditedBlog({ ...editedBlog, category: e.target.value })}
+                                className="bg-white/5 border border-white/10 rounded-lg p-1 text-[8px] font-black uppercase tracking-widest text-gray-500 outline-none"
+                              >
+                                <option value="Web Development">Web Development</option>
+                                <option value="Design">UI/UX Design</option>
+                                <option value="Business">Business / SEO</option>
+                                <option value="AI">Artificial Intelligence</option>
+                              </select>
+                            )}
+                          </div>
+                          
+                          {isEditing ? (
+                            <textarea 
+                              value={editedBlog?.excerpt || ''}
+                              onChange={(e) => setEditedBlog({ ...editedBlog, excerpt: e.target.value })}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-gray-400 outline-none focus:border-blue-500/50 transition-all font-medium italic h-20 resize-none"
+                            />
+                          ) : (
+                            <p className="text-sm text-gray-500 italic font-medium">"{generatedBlog.excerpt}"</p>
+                          )}
+                       </div>
+                       
+                       <article className="prose prose-invert prose-sm max-w-none">
+                          {isEditing ? (
+                            <textarea 
+                              value={editedBlog?.content || ''}
+                              onChange={(e) => setEditedBlog({ ...editedBlog, content: e.target.value })}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-gray-400 outline-none focus:border-blue-500/50 transition-all font-medium leading-relaxed h-96 resize-none"
+                            />
+                          ) : (
+                            <div className="whitespace-pre-wrap text-gray-400 font-medium leading-relaxed">
+                               {generatedBlog.content}
+                            </div>
+                          )}
+                       </article>
 
-                      <div className="pt-10 border-t border-white/5 flex gap-4">
-                         <button className="flex-1 btn-os bg-white text-black font-black uppercase tracking-widest text-[10px] h-12">
-                            <FileText size={16} /> Save to Drafts
-                         </button>
-                         <button onClick={() => setGeneratedBlog(null)} className="btn-os text-gray-600 h-12">
-                            <RefreshCcw size={16} /> regenerate
-                         </button>
-                      </div>
-                   </div>
-                ) : (
-                   <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+                       {isEditing && (
+                         <div className="space-y-4 p-6 bg-white/5 rounded-xl border border-white/10">
+                           <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">SEO Keywords ({editedBlog?.seoKeywords?.length || 0})</h4>
+                           {isEditing ? (
+                             <div className="space-y-2">
+                               {(editedBlog?.seoKeywords || []).map((kw, i) => (
+                                 <input 
+                                   key={i}
+                                   type="text"
+                                   value={kw}
+                                   onChange={(e) => {
+                                     const newKws = [...(editedBlog?.seoKeywords || [])];
+                                     newKws[i] = e.target.value;
+                                     setEditedBlog({ ...editedBlog, seoKeywords: newKws });
+                                   }}
+                                   className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-xs text-gray-400 outline-none focus:border-blue-500/50 transition-all"
+                                   placeholder={`Keyword ${i + 1}`}
+                                 />
+                               ))}
+                             </div>
+                           ) : (
+                             <div className="flex flex-wrap gap-2">
+                               {generatedBlog.seoKeywords?.map((kw, i) => <span key={i} className="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400">{kw}</span>)}
+                             </div>
+                           )}
+                         </div>
+                       )}
+
+                       {!isEditing && generatedBlog.seoKeywords && generatedBlog.seoKeywords.length > 0 && (
+                         <div className="space-y-4 p-6 bg-white/5 rounded-xl border border-white/10">
+                           <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">SEO Keywords ({generatedBlog.seoKeywords.length})</h4>
+                           <div className="flex flex-wrap gap-2">
+                             {generatedBlog.seoKeywords.map((kw, i) => <span key={i} className="px-2 py-1 bg-white/5 rounded text-[10px] text-gray-400">{kw}</span>)}
+                           </div>
+                         </div>
+                       )}
+
+                       {isEditing && (
+                         <div className="space-y-4 p-6 bg-white/5 rounded-xl border border-white/10">
+                           <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest">Featured Image URL</h4>
+                           <input 
+                             type="text"
+                             value={editedBlog?.featuredImage || ''}
+                             onChange={(e) => setEditedBlog({ ...editedBlog, featuredImage: e.target.value })}
+                             className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-xs text-gray-400 outline-none focus:border-blue-500/50 transition-all"
+                             placeholder="https://images.unsplash.com/..."
+                           />
+                           {editedBlog?.featuredImage && (
+                             <img src={editedBlog.featuredImage} alt="Featured" className="w-full h-40 object-cover rounded-lg mt-2" />
+                           )}
+                         </div>
+                       )}
+
+                       <div className="pt-10 border-t border-white/5 flex gap-4">
+                          {isEditing ? (
+                            <>
+                              <button onClick={handleSaveEdit} className="flex-1 btn-os bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] h-12 flex items-center justify-center gap-2">
+                                <Check size={16} /> Save Changes
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button 
+                                onClick={handlePostBlog}
+                                disabled={createBlogMutation.isPending}
+                                className="flex-1 btn-os bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] h-12 flex items-center justify-center gap-2"
+                              >
+                                {createBlogMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />} 
+                                Post Blog
+                              </button>
+                              <button onClick={() => setGeneratedBlog(null)} className="btn-os text-gray-600 h-12">
+                                <RefreshCcw size={16} /> Regenerate
+                              </button>
+                            </>
+                          )}
+                       </div>
+                    </div>
+                 ) : (
+                   <div className="h-full flex flex-col items-center justify-center text-center mx-auto">
                       <div className="w-20 h-20 rounded-[24px] bg-white/5 flex items-center justify-center text-gray-700 mb-8 border border-white/5 border-dashed">
                          <Sparkles size={32} />
                       </div>

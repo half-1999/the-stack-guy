@@ -231,158 +231,185 @@ export default function Appointments() {
 
       {/* ✅ Modal OUTSIDE */}
       <AnimatePresence>
-        {selectedApp && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+  {selectedApp && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 20 }}
+        className="w-full max-w-2xl h-[90vh] bg-[#0a0a0f] border border-white/10 rounded-3xl flex flex-col p-8"
+      >
+        {/* ================= HEADER ================= */}
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h3 className="text-3xl font-black text-white uppercase tracking-widest font-display">
+              Meeting Details
+            </h3>
+            <div className="text-gray-500 mt-2 flex items-center gap-2">
+              <Clock3 size={16} />
+              {new Date(selectedApp.date).toLocaleDateString()} at{" "}
+              {selectedApp.timeSlot}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setSelectedApp(null)}
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10"
           >
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="w-full max-w-2xl bg-[#0a0a0f] border border-white/10 rounded-3xl overflow-hidden p-8"
-            >
-              {/* HEADER */}
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h3 className="text-3xl font-black text-white uppercase tracking-widest font-display">
-                    Meeting Details
-                  </h3>
-                  <div className="text-gray-500 mt-2 flex items-center gap-2">
-                    <Clock3 size={16} />
-                    {new Date(selectedApp.date).toLocaleDateString()} at {selectedApp.timeSlot}
-                  </div>
-                </div>
+            <X size={20} />
+          </button>
+        </div>
 
-                <button
-                  onClick={() => setSelectedApp(null)}
-                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10"
+        {/* ================= BODY (SCROLLABLE) ================= */}
+        <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar">
+
+          <div className="grid grid-cols-2 gap-6">
+            {/* Client Name */}
+            <div className="glass-card p-6 border-white/5">
+              <p className="text-[10px] text-gray-500 uppercase mb-2">
+                Client Name
+              </p>
+              <p className="text-white flex items-center gap-2">
+                <User size={16} className="text-blue-500" />
+                {selectedApp.name || selectedApp.clientId?.name}
+              </p>
+            </div>
+
+            {/* Email */}
+            <div className="glass-card p-6 border-white/5">
+              <p className="text-[10px] text-gray-500 uppercase mb-2">
+                Email
+              </p>
+              <p className="text-white flex items-center gap-2 truncate">
+                <Mail size={16} className="text-blue-500" />
+                {selectedApp.email}
+              </p>
+            </div>
+
+            {/* Type & Status */}
+            <div className="glass-card p-6 border-white/5">
+              <p className="text-[10px] text-gray-500 uppercase mb-2">
+                Type & Status
+              </p>
+              <p className="text-white capitalize">
+                {selectedApp.type?.replace("-", " ")} -{" "}
+                <span
+                  className={
+                    selectedApp.status === "confirmed"
+                      ? "text-green-500"
+                      : "text-yellow-500"
+                  }
                 >
-                  <X size={20} />
-                </button>
-              </div>
+                  {selectedApp.status}
+                </span>
+              </p>
+            </div>
 
-              {/* BODY */}
-              <div className="space-y-6">
+            {/* Notes */}
+            <div className="glass-card p-6 border-white/5 col-span-2">
+              <p className="text-[10px] text-gray-500 uppercase mb-4">
+                Protocol Log / Notes
+              </p>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="glass-card p-6 border-white/5">
-                    <p className="text-[10px] text-gray-500 uppercase mb-2">
-                      Client Name
-                    </p>
-                    <p className="text-white flex items-center gap-2">
-                      <User size={16} className="text-blue-500" />
-                      {selectedApp.name || selectedApp.clientId?.name}
-                    </p>
-                  </div>
-
-                  <div className="glass-card p-6 border-white/5">
-                    <p className="text-[10px] text-gray-500 uppercase mb-2">
-                      Email
-                    </p>
-                    <p className="text-white flex items-center gap-2 truncate">
-                      <Mail size={16} className="text-blue-500" />
-                      {selectedApp.email}
-                    </p>
-                  </div>
-
-                  <div className="glass-card p-6 border-white/5">
-                    <p className="text-[10px] text-gray-500 uppercase mb-2">
-                      Type & Status
-                    </p>
-                    <p className="text-white capitalize">
-                      {selectedApp.type?.replace('-', ' ')} -{" "}
-                      <span className={selectedApp.status === 'confirmed' ? 'text-green-500' : 'text-yellow-500'}>
-                        {selectedApp.status}
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="glass-card p-6 border-white/5 col-span-2">
-                    <p className="text-[10px] text-gray-500 uppercase mb-4">
-                      Protocol Log / Notes
-                    </p>
-                    <div className="space-y-4 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                      {selectedApp.notes && selectedApp.notes.length > 0 ? (
-                        selectedApp.notes.map((n, idx) => (
-                          <div key={idx} className="p-4 bg-white/[0.02] rounded-xl border border-white/5">
-                            <p className="text-sm text-gray-300">{n.text}</p>
-                            <p className="text-[9px] text-gray-600 mt-2 uppercase font-black">
-                              {new Date(n.date).toLocaleString()} • {n.author || 'Admin'}
-                            </p>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 italic text-sm text-center py-4">No notes on record.</p>
-                      )}
-                    </div>
-                    {user?.role === 'admin' && (
-                      <div className="mt-4 flex gap-2">
-                        <input 
-                          value={newNote}
-                          onChange={(e) => setNewNote(e.target.value)}
-                          placeholder="Add internal note..."
-                          className="flex-1 h-10 px-4 bg-white/5 border border-white/10 rounded-lg text-xs text-white"
-                        />
-                        <button 
-                          onClick={() => {
-                            if (!newNote) return;
-                            appointmentsAPI.addNote(selectedApp._id, newNote).then((res) => {
-                              toast.success('Note added');
-                              setNewNote('');
-                              setSelectedApp(res.data.data);
-                              queryClient.invalidateQueries(['appointments']);
-                            });
-                          }}
-                          className="h-10 px-4 bg-blue-600 text-[10px] font-black uppercase tracking-widest rounded-lg text-white"
-                        >
-                          ADD
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* ADMIN PANEL */}
-                {user?.role === 'admin' && (
-                  <div className="mt-6 border-t border-white/10 pt-6">
-                    <input
-                      type="url"
-                      value={meetingLink}
-                      onChange={(e) => setMeetingLink(e.target.value)}
-                      placeholder="Meeting link..."
-                      className="w-full h-12 px-4 bg-white/5 border border-white/10 rounded-xl text-white"
-                    />
-
-                    <button
-                      onClick={() => handleApprove(selectedApp)}
-                      className="btn-primary w-full mt-4 h-12"
+              <div className="space-y-4 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                {selectedApp.notes && selectedApp.notes.length > 0 ? (
+                  selectedApp.notes.map((n, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 bg-white/[0.02] rounded-xl border border-white/5"
                     >
-                      {selectedApp.status === 'confirmed'
-                        ? 'Update Link'
-                        : 'Approve & Send'}
-                    </button>
-                  </div>
-                )}
-
-                {/* CLIENT VIEW */}
-                {selectedApp.meetingLink && user?.role !== 'admin' && (
-                  <a
-                    href={selectedApp.meetingLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-primary w-full flex justify-center h-12"
-                  >
-                    Join Meeting
-                  </a>
+                      <p className="text-sm text-gray-300">
+                        {n.text}
+                      </p>
+                      <p className="text-[9px] text-gray-600 mt-2 uppercase font-black">
+                        {new Date(n.date).toLocaleString()} •{" "}
+                        {n.author || "Admin"}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 italic text-sm text-center py-4">
+                    No notes on record.
+                  </p>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+              {/* Add Note */}
+              {user?.role === "admin" && (
+                <div className="mt-4 flex gap-2">
+                  <input
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder="Add internal note..."
+                    className="flex-1 h-10 px-4 bg-white/5 border border-white/10 rounded-lg text-xs text-white"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newNote) return;
+
+                      appointmentsAPI
+                        .addNote(selectedApp._id, newNote)
+                        .then((res) => {
+                          toast.success("Note added");
+                          setNewNote("");
+                          setSelectedApp(res.data.data);
+                          queryClient.invalidateQueries([
+                            "appointments",
+                          ]);
+                        });
+                    }}
+                    className="h-10 px-4 bg-blue-600 text-[10px] font-black uppercase tracking-widest rounded-lg text-white"
+                  >
+                    ADD
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ================= ADMIN PANEL ================= */}
+          {user?.role === "admin" && (
+            <div className="border-t border-white/10 pt-6">
+              <input
+                type="url"
+                value={meetingLink}
+                onChange={(e) => setMeetingLink(e.target.value)}
+                placeholder="Meeting link..."
+                className="w-full h-12 px-4 bg-white/5 border border-white/10 rounded-xl text-white"
+              />
+
+              <button
+                onClick={() => handleApprove(selectedApp)}
+                className="btn-primary w-full mt-4 h-12"
+              >
+                {selectedApp.status === "confirmed"
+                  ? "Update Link"
+                  : "Approve & Send"}
+              </button>
+            </div>
+          )}
+
+          {/* ================= CLIENT VIEW ================= */}
+          {selectedApp.meetingLink && user?.role !== "admin" && (
+            <a
+              href={selectedApp.meetingLink}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary w-full flex justify-center h-12"
+            >
+              Join Meeting
+            </a>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
     </>
 
   );

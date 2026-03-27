@@ -1,8 +1,14 @@
+
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const API_BASE = import.meta.env.DEV
   ? 'http://localhost:5000/api'
   : 'https://the-stack-guy.onrender.com/api';
+
+export const SOCKET_URL = import.meta.env.DEV
+  ? 'http://localhost:5000'
+  : 'https://the-stack-guy.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -18,20 +24,73 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors
+// =========================
+// RESPONSE INTERCEPTOR
+// =========================
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = response.config?.method;
+
+    // ✅ Show success toast for mutations only
+    if (
+      ['post', 'put', 'patch', 'delete'].includes(method) &&
+      !response.config?.skipToast
+    ) {
+      const message =
+        response?.data?.message || 'Operation successful';
+      toast.success(message);
+    }
+
+    return response;
+  },
   (error) => {
+    let message = 'Something went wrong';
+
+    // =========================
+    // NETWORK ERROR
+    // =========================
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED') {
+        message = 'Request timeout. Please try again.';
+      } else {
+        message = 'No internet connection. Please check your network.';
+      }
+    }
+    // =========================
+    // SERVER ERROR
+    // =========================
+    else {
+      message =
+        error.response?.data?.message ||
+        'Server error. Please try again later.';
+    }
+
+    // =========================
+    // SHOW ERROR TOAST
+    // =========================
+    if (!error.config?.skipToast) {
+      toast.error(message);
+    }
+
+    // =========================
+    // AUTH ERROR HANDLING
+    // =========================
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      if (window.location.pathname.startsWith('/dashboard') || window.location.pathname.startsWith('/admin')) {
+
+      if (
+        window.location.pathname.startsWith('/dashboard') ||
+        window.location.pathname.startsWith('/admin')
+      ) {
         window.location.href = '/login';
       }
     }
+
     return Promise.reject(error);
   }
 );
+
 
 // Auth
 export const authAPI = {
@@ -52,10 +111,11 @@ export const leadsAPI = {
   create: (data) => api.post('/leads', data),
   getAll: (params) => api.get('/leads', { params }),
   getOne: (id) => api.get(`/leads/${id}`),
-  update: (id, data) => api.patch(`/leads/${id}`, data),
+  update: (id, data) => api.post(`/leads/${id}`, data),
   delete: (id) => api.delete(`/leads/${id}`),
   addFollowUp: (id, data) => api.post(`/leads/${id}/follow-up`, data),
-  scheduleMeeting: (id, data) => api.post(`/leads/${id}/schedule-meeting`, data),
+  scheduleMeeting: (id, data) =>
+    api.post(`/leads/${id}/schedule-meeting`, data),
 };
 
 // Projects
@@ -66,19 +126,27 @@ export const projectsAPI = {
   update: (id, data) => api.patch(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
   reorderKanban: (data) => api.patch('/projects/kanban/reorder', data),
-  addFile: (projectId, data) => api.post(`/projects/${projectId}/files`, data),
-  deleteFile: (projectId, fileId) => api.delete(`/projects/${projectId}/files/${fileId}`),
-  // Milestones
-  addMilestone: (id, data) => api.post(`/projects/${id}/milestones`, data),
-  updateMilestone: (id, milestoneId, data) => api.patch(`/projects/${id}/milestones/${milestoneId}`, data),
-  deleteMilestone: (id, milestoneId) => api.delete(`/projects/${id}/milestones/${milestoneId}`),
+  addFile: (projectId, data) =>
+    api.post(`/projects/${projectId}/files`, data),
+  deleteFile: (projectId, fileId) =>
+    api.delete(`/projects/${projectId}/files/${fileId}`),
+
+  addMilestone: (id, data) =>
+    api.post(`/projects/${id}/milestones`, data),
+  updateMilestone: (id, milestoneId, data) =>
+    api.patch(`/projects/${id}/milestones/${milestoneId}`, data),
+  deleteMilestone: (id, milestoneId) =>
+    api.delete(`/projects/${id}/milestones/${milestoneId}`),
 };
 
 // Vault
 export const vaultAPI = {
-  getProjectFiles: (projectId) => api.get(`/projects/${projectId}`), // Using project getOne as it includes files
-  addFile: (projectId, data) => api.post(`/projects/${projectId}/files`, data),
-  deleteFile: (projectId, fileId) => api.delete(`/projects/${projectId}/files/${fileId}`),
+  getProjectFiles: (projectId) =>
+    api.get(`/projects/${projectId}`),
+  addFile: (projectId, data) =>
+    api.post(`/projects/${projectId}/files`, data),
+  deleteFile: (projectId, fileId) =>
+    api.delete(`/projects/${projectId}/files/${fileId}`),
 };
 
 // Invoices
@@ -103,12 +171,16 @@ export const proposalsAPI = {
 
 // Appointments
 export const appointmentsAPI = {
-  getSlots: (date) => api.get('/appointments/slots', { params: { date } }),
+  getSlots: (date) =>
+    api.get('/appointments/slots', { params: { date } }),
   book: (data) => api.post('/appointments', data),
   getAll: (params) => api.get('/appointments', { params }),
-  update: (id, data) => api.patch(`/appointments/${id}`, data),
-  createManual: (data) => api.post('/appointments/admin', data),
-  addNote: (id, note) => api.post(`/appointments/${id}/notes`, { note }),
+  update: (id, data) =>
+    api.patch(`/appointments/${id}`, data),
+  createManual: (data) =>
+    api.post('/appointments/admin', data),
+  addNote: (id, note) =>
+    api.post(`/appointments/${id}/notes`, { note }),
 };
 
 // Blog
@@ -143,45 +215,59 @@ export const testimonialsAPI = {
 // Messages
 export const messagesAPI = {
   getByUser: (userId) => api.get(`/messages/user/${userId}`),
-  getByProject: (projectId) => api.get(`/messages/project/${projectId}`),
-  getSupportConversations: () => api.get('/messages/admin/support'),
+  getByProject: (projectId) =>
+    api.get(`/messages/project/${projectId}`),
+  getSupportConversations: () =>
+    api.get('/messages/admin/support'),
   send: (data) => api.post('/messages', data),
-  replyViaEmail: (data) => api.post('/messages/reply-email', data),
-  markRead: (userId) => api.patch(`/messages/read/${userId}`),
-  getUnreadCount: () => api.get('/messages/unread/count'),
+  replyViaEmail: (data) =>
+    api.post('/messages/reply-email', data),
+  markRead: (userId) =>
+    api.patch(`/messages/read/${userId}`),
+  getUnreadCount: () =>
+    api.get('/messages/unread/count'),
 };
 
 // Notifications
 export const notificationsAPI = {
   getAll: (params) => api.get('/notifications', { params }),
-  markRead: (id) => api.patch(`/notifications/${id}/read`),
-  markAllRead: () => api.patch('/notifications/read-all'),
+  markRead: (id) =>
+    api.post(`/notifications/${id}/read`),
+  markAllRead: () =>
+    api.post('/notifications/all/read'),
 };
 
 // Analytics
 export const analyticsAPI = {
-  getRevenue: (params) => api.get('/analytics/revenue', { params }),
+  getRevenue: (params) =>
+    api.get('/analytics/revenue', { params }),
   getActivity: () => api.get('/analytics/activity'),
   getDashboard: () => api.get('/analytics/dashboard'),
 };
 
 // AI
 export const aiAPI = {
-  chat: (messages, model) => api.post('/ai/chat', { messages, model }),
-  generateBlog: (data) => api.post('/ai/generate-blog', data),
-  analyzeLead: (id) => api.post(`/ai/analyze-lead/${id}`),
-  generateRoadmap: (id) => api.post(`/ai/generate-roadmap/${id}`),
+  chat: (messages, model) =>
+    api.post('/ai/chat', { messages, model }),
+  generateBlog: (data) =>
+    api.post('/ai/generate-blog', data),
+  analyzeLead: (id) =>
+    api.post(`/ai/analyze-lead/${id}`),
+  generateRoadmap: (id) =>
+    api.post(`/ai/generate-roadmap/${id}`),
 };
 
 export const crmAPI = {
   sync: () => api.post('/crm/sync'),
-  updateSettings: (data) => api.patch('/crm/settings', data),
+  updateSettings: (data) =>
+    api.patch('/crm/settings', data),
 };
 
 // Services
 export const servicesAPI = {
   getAll: () => api.get('/services'),
-  getBySlug: (slug) => api.get(`/services/${slug}`),
+  getBySlug: (slug) =>
+    api.get(`/services/${slug}`),
 };
 
 // Audit
@@ -195,7 +281,8 @@ export const communityAPI = {
   getAll: (params) => api.get('/community', { params }),
   create: (data) => api.post('/community', data),
   like: (id) => api.post(`/community/${id}/like`),
-  comment: (id, data) => api.post(`/community/${id}/comment`, data),
+  comment: (id, data) =>
+    api.post(`/community/${id}/comment`, data),
 };
 
 export default api;

@@ -18,6 +18,7 @@ const setState = (data) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data
 export default function LeadPopup() {
     const [open, setOpen] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
     const location = useLocation();
     const { register, handleSubmit, reset } = useForm();
     const timerRef = useRef(null);
@@ -54,6 +55,7 @@ export default function LeadPopup() {
     // Submit form
     const onSubmit = async (data) => {
         try {
+            setLoading(true);
             await leadsAPI.create({
                 name: data.name || 'Guest',
                 email: data.email || 'leads@thestackguy.com',
@@ -69,6 +71,8 @@ export default function LeadPopup() {
             reset();
         } catch (err) {
             console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -140,34 +144,62 @@ export default function LeadPopup() {
 
                                     <button
                                         type="submit"
-                                        className="btn-primary w-full py-3 text-center flex items-center justify-center gap-2"
+                                        disabled={loading}
+                                        className={`btn-primary w-full py-3 flex items-center justify-center gap-2 transition-all duration-300
+                                        ${loading ? "opacity-70 cursor-not-allowed" : "hover:scale-[1.02]"}`}
                                     >
-                                        Submit
-                                        <CheckCircle size={18} />
+                                         {loading ? (
+                                                <>
+                                                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                                    Submitting...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Submit
+                                                    <CheckCircle size={18} />
+                                                </>
+                                            )}
                                     </button>
                                 </form>
                             </>
                         ) : (
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="text-center space-y-4 p-6"
+                            initial={{ opacity: 0, scale: 0.85, y: 30 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.85 }}
+                            transition={{ duration: 0.4 }}
+                            className="text-center space-y-5 p-8"
+                        >
+                            {/* Animated Icon */}
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                                className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto"
                             >
-                                <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
-                                    <CheckCircle size={36} className="text-green-500" />
-                                </div>
-                                <h3 className="text-xl font-bold text-white">Thank You!</h3>
-                                <p className="text-[#9ca3af]">
-                                    Your details have been received. We’ll contact you shortly.
-                                </p>
-                                <button
-                                    onClick={handleReset}
-                                    className="btn-secondary px-8 py-3"
-                                >
-                                    Close
-                                </button>
+                                <CheckCircle size={36} className="text-green-400" />
                             </motion.div>
+
+                            {/* Heading */}
+                            <h3 className="text-2xl font-semibold text-white">
+                                Submission Successful 🎉
+                            </h3>
+
+                            {/* Message */}
+                            <p className="text-[#9ca3af] text-sm leading-relaxed max-w-xs mx-auto">
+                                Thanks for reaching out. Our team has received your details and will
+                                get in touch with you shortly.
+                            </p>
+
+                            {/* CTA Button */}
+                            <button
+                                onClick={handleReset}
+                                className="mt-4 px-6 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 
+                                text-white transition-all duration-300 backdrop-blur-md border border-white/10"
+                            >
+                                Close
+                            </button>
+                        </motion.div>
                         )}
                     </motion.div>
                 </motion.div>

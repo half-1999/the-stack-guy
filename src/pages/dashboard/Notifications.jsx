@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { io } from 'socket.io-client';
 import { 
   Bell, CheckCircle, Clock, Trash2, 
   Settings, MessageSquare, CreditCard, 
@@ -24,26 +23,8 @@ export default function Notifications() {
     }
   });
 
-  useEffect(() => {
-    if (!token) return;
-
-    const socket = io(window.location.origin, {
-      auth: { token }
-    });
-
-    socket.on('new-notification', (notif) => {
-      queryClient.setQueryData(['notifications'], (old = []) => {
-        // Prevent duplicates
-        if (old.find(n => n._id === notif._id)) return old;
-        return [notif, ...old];
-      });
-    });
-
-    return () => socket.disconnect();
-  }, [token, queryClient]);
-
   const readMutation = useMutation({
-    mutationFn: (id) => notificationsAPI.markAsRead(id),
+    mutationFn: (id) => notificationsAPI.markRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
     }
@@ -170,7 +151,7 @@ export default function Notifications() {
             </div>
             <div>
                <h4 className="text-xl font-bold text-white mb-2 uppercase tracking-widest leading-none">Smart Notifications</h4>
-               <p className="text-sm font-medium text-[#9ca3af] italic max-w-md">
+               <p className="text-sm font-medium text-[#9ca3af] italic">
                  Our system uses AI to prioritize urgent events, ensuring you never miss a critical message or payment deadline.
                </p>
             </div>

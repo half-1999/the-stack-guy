@@ -31,12 +31,12 @@ export default function Sidebar() {
   ];
 
   const ecosystemItems = [
-    { label: 'Blog Engine', path: '/dashboard/blog', icon: FileText },
-    { label: 'Portfolio', path: '/dashboard/portfolio', icon: HardDrive },
+    { label: 'Leads', path: '/dashboard/leads', icon: Users },
     { label: 'Bookings', path: '/dashboard/appointments', icon: Calendar },
     { label: 'Users', path: '/dashboard/users', icon: Users },
-    { label: 'Leads', path: '/dashboard/leads', icon: Users },
-    { label: 'Support & Feedback', path: '/dashboard/support', icon: HelpCircle },
+    { label: 'Portfolio', path: '/dashboard/portfolio', icon: HardDrive },
+    { label: 'Blogs', path: '/dashboard/blog', icon: FileText },
+    { label: 'Support', path: '/dashboard/support', icon: HelpCircle },
     { label: 'Website Audit', path: '/dashboard/audit', icon: Globe },
     { label: 'Security Audit', path: '/dashboard/audit-logs', icon: ShieldCheck },
   ];
@@ -59,7 +59,7 @@ export default function Sidebar() {
       </button>
 
       {/* Brand Header */}
-      <div className="p-8 pb-12 flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/')}>
+      <div className="p-8 pb-8 flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/')}>
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg transform transition-transform group-hover:rotate-6">
           <Zap size={24} color="#fff" fill="#fff" />
         </div>
@@ -74,9 +74,9 @@ export default function Sidebar() {
       </div>
 
       {/* Primary Navigation */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-8 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4 scrollbar-hide">
         <div>
-          <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mb-4 italic">Core System</p>
+          <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mb-2 italic">Core System</p>
           <div className="space-y-1">
             {mainItems.map(item => (
               <SidebarLink key={item.path} {...item} />
@@ -84,18 +84,9 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div>
-          <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mb-4 italic">Operations</p>
-          <div className="space-y-1">
-            {operationalItems.map(item => (
-              <SidebarLink key={item.path} {...item} />
-            ))}
-          </div>
-        </div>
-
         {isAdmin && (
           <div>
-            <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mb-4 italic">Ecosystem</p>
+            <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mb-2 italic">Ecosystem</p>
             <div className="space-y-1">
               {ecosystemItems.map(item => (
                 <SidebarLink key={item.path} {...item} />
@@ -103,6 +94,17 @@ export default function Sidebar() {
             </div>
           </div>
         )}
+
+        <div>
+          <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mb-2 italic">Operations</p>
+          <div className="space-y-1">
+            {operationalItems.map(item => (
+              <SidebarLink key={item.path} {...item} />
+            ))}
+          </div>
+        </div>
+
+        
       </div>
 
       {/* User Session Footer */}
