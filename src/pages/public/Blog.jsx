@@ -9,6 +9,20 @@ import LoadingScreen from '../../components/ui/LoadingScreen';
 
 const categories = ['All', 'Web Design', 'Digital Marketing', 'SaaS', 'SEO', 'Freelancing', 'Case Study'];
 
+const fallbackImages = [
+  'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&h=400&fit=crop'
+];
+
+const getFeaturedImage = (post) => {
+  if (post?.featuredImage) return post.featuredImage;
+  const index = post?._id ? post._id.charCodeAt(0) % fallbackImages.length : 0;
+  return fallbackImages[index];
+};
+
 export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
@@ -153,7 +167,7 @@ export default function Blog() {
                 >
                   <Link to={`/blog/${post.slug}`} className="relative h-60 overflow-hidden">
                     <img
-                      src={post.featuredImage}
+                      src={getFeaturedImage(post)}
                       alt={post.title}
                       loading="lazy"
                       decoding="async"

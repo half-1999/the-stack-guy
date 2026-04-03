@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, FileText, CreditCard,
   MessageSquare, Calendar, Bell, Settings, LogOut, Zap, Users,
   BarChart3, MessageCircle, Sparkles, Globe,
-  ShieldCheck, HelpCircle, HardDrive, Gift, X
+  ShieldCheck, HelpCircle, HardDrive, Gift, X, Target, Instagram
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '../../store';
 
@@ -32,10 +32,14 @@ export default function Sidebar() {
 
   const ecosystemItems = [
     { label: 'Leads', path: '/dashboard/leads', icon: Users },
+    { label: 'Lead Generator', path: '/dashboard/lead-generator', icon: Target, badge: 'AI' },
     { label: 'Bookings', path: '/dashboard/appointments', icon: Calendar },
     { label: 'Users', path: '/dashboard/users', icon: Users },
     { label: 'Portfolio', path: '/dashboard/portfolio', icon: HardDrive },
     { label: 'Blogs', path: '/dashboard/blog', icon: FileText },
+    { label: 'Auto Blog', path: '/dashboard/auto-blog', icon: Zap, badge: 'AI' },
+    { label: 'Project Gen', path: '/dashboard/project-generator', icon: Sparkles, badge: 'NEW' },
+    { label: 'Insta Post', path: '/dashboard/insta-post', icon: Instagram, badge: 'AI' },
     { label: 'Support', path: '/dashboard/support', icon: HelpCircle },
     { label: 'Website Audit', path: '/dashboard/audit', icon: Globe },
     { label: 'Security Audit', path: '/dashboard/audit-logs', icon: ShieldCheck },

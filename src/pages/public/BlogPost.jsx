@@ -10,6 +10,14 @@ import LoadingScreen from '../../components/ui/LoadingScreen';
 export default function BlogPost() {
   const { slug } = useParams();
 
+  const fallbackImages = [
+    'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=1200&h=600&fit=crop'
+  ];
+
   const { data: post, isLoading, error } = useQuery({
     queryKey: ['blog-post', slug],
     queryFn: async () => {
@@ -19,6 +27,20 @@ export default function BlogPost() {
     staleTime: 1000 * 60 * 10,
     retry: 2
   });
+
+  const getFeaturedImage = (post) => {
+    if (post?.featuredImage) return post.featuredImage;
+    const index = post?._id ? post._id.charCodeAt(0) % fallbackImages.length : 0;
+    return fallbackImages[index];
+  };
+
+  const featuredImage = post ? getFeaturedImage(post) : fallbackImages[0];
+
+  const getRelatedImage = (rel) => {
+    if (rel?.featuredImage) return rel.featuredImage;
+    const index = rel?._id ? rel._id.charCodeAt(0) % fallbackImages.length : 0;
+    return fallbackImages[index];
+  };
 
   const category = post?.category;
 
@@ -62,7 +84,7 @@ export default function BlogPost() {
         <meta name="description" content={post.excerpt} />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.excerpt} />
-        <meta property="og:image" content={post.featuredImage} />
+        <meta property="og:image" content={featuredImage} />
         <meta property="og:type" content="article" />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -70,7 +92,7 @@ export default function BlogPost() {
             "@type": "BlogPosting",
             "headline": post.title,
             "description": post.excerpt,
-            "image": post.featuredImage,
+            "image": featuredImage,
             "author": { "@type": "Organization", "name": "The Stack Guy" },
             "datePublished": post.publishedAt
           })}
@@ -112,7 +134,7 @@ export default function BlogPost() {
         <section className="mb-20 mx-auto px-4 mt-2">
           <motion.div className="relative h-[250px] md:h-[500px] rounded-[40px] overflow-hidden shadow-lg">
             <img
-              src={post.featuredImage}
+              src={featuredImage}
               alt={post.title}
               loading="lazy"
               decoding="async"
@@ -178,7 +200,7 @@ export default function BlogPost() {
                 <h3 className="text-white mb-6">Related Posts</h3>
                 {related?.map(rel => (
                   <Link key={rel._id} to={`/blog/${rel.slug}`} className="flex gap-4 mb-4 hover:bg-gray-800 p-2 rounded-md transition">
-                    <img src={rel.featuredImage} className="w-20 h-20 object-cover rounded-xl" loading="lazy" />
+                    <img src={getRelatedImage(rel)} className="w-20 h-20 object-cover rounded-xl" loading="lazy" />
                     <div>
                       <h4 className="text-white text-sm font-semibold">{rel.title}</h4>
                       <p className="text-xs text-gray-400">{rel.readTime} min</p>

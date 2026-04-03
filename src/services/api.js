@@ -255,6 +255,12 @@ export const aiAPI = {
     api.post(`/ai/analyze-lead/${id}`),
   generateRoadmap: (id) =>
     api.post(`/ai/generate-roadmap/${id}`),
+  generateLeads: (data) =>
+    api.post('/ai/generate-leads', data),
+  generateSingleLead: (data) =>
+    api.post('/ai/generate-single-lead', data),
+  runCronNow: () =>
+    api.post('/ai/run-cron-now'),
 };
 
 export const crmAPI = {
@@ -283,6 +289,20 @@ export const communityAPI = {
   like: (id) => api.post(`/community/${id}/like`),
   comment: (id, data) =>
     api.post(`/community/${id}/comment`, data),
+};
+
+// Blog Scheduler
+export const blogSchedulerAPI = {
+  start: () => api.post('/blog-scheduler/start'),
+  stop: () => api.post('/blog-scheduler/stop'),
+  status: () => api.get('/blog-scheduler/status'),
+  history: (limit) => api.get('/blog-scheduler/history', { params: { limit } }),
+  generate: (topic) => api.post('/blog-scheduler/generate', { topic }),
+  preview: (topic) => api.post('/blog-scheduler/preview', { topic }),
+  publish: (blogData, topic) => api.post('/blog-scheduler/publish', { blogData, topic }),
+  runNow: () => api.post('/blog-scheduler/run-now'),
+  getTopics: () => api.get('/blog-scheduler/topics'),
+  setNextTopic: (topic) => api.post('/blog-scheduler/set-next', { topic }),
 };
 
 export default api;

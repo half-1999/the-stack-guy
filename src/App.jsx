@@ -60,6 +60,10 @@ const AdminPortfolio = lazy(() => import('./pages/dashboard/AdminPortfolio'));
 const AdminPortfolioEdit = lazy(() => import('./pages/dashboard/AdminPortfolioEdit'));
 const Analytics = lazy(() => import('./pages/dashboard/Analytics'));
 const AuditLogs = lazy(() => import('./pages/dashboard/AuditLogs'));
+const AutoBlog = lazy(() => import('./pages/dashboard/AutoBlog'));
+const LeadGenerator = lazy(() => import('./pages/dashboard/LeadGenerator'));
+const ProjectGenerator = lazy(() => import('./pages/dashboard/ProjectGenerator'));
+const InstaPostGenerator = lazy(() => import('./pages/dashboard/InstaPostGenerator'));
 
 
 // 🔥 Optimized Query Client
@@ -168,12 +172,16 @@ function AnimatedRoutes() {
               <Route path="vault" element={<Drive />} /> // incomplete
 
               <Route path="leads" element={<Leads />} />
+              <Route path="lead-generator" element={<LeadGenerator />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="blog" element={<AdminBlog />} /> // incomplete
               <Route path="portfolio" element={<AdminPortfolio />} />
               <Route path="portfolio/:id" element={<AdminPortfolioEdit />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="audit-logs" element={<AuditLogs />} />
+              <Route path="auto-blog" element={<AutoBlog />} />
+              <Route path="project-generator" element={<ProjectGenerator />} />
+              <Route path="insta-post" element={<InstaPostGenerator />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
